@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.19)
 project(COMiC C)
 
-set(CMAKE_C_STANDARD 99)
+set(CMAKE_C_STANDARD 11)
 
 #find_package(Java COMPONENTS Runtime)
 #find_package(Java COMPONENTS Development)
