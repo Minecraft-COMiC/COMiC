@@ -94,3 +94,23 @@ class UUID(int):
 
     def write(self, ostream):
         ostream.write(self.to_bytes(16, "big", signed=False))
+
+
+class BytesBase(bytes):
+    @classmethod
+    def read(cls, istream, n):
+        raw = istream.read(n)
+        if len(raw) != n:
+            raise EOFError
+        return cls(raw)
+
+    def write(self, ostream):
+        ostream.write(self)
+
+
+class Bytes(type):
+    def __new__(cls, field_name):
+        return super().__new__(f"Bytes[.{field_name}]", (BytesBase,), {"field_name": field_name})
+
+    def __init__(self, field_name):
+        pass
