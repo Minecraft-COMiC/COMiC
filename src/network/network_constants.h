@@ -4,13 +4,13 @@
 #define DEFAULT_SERVER_IP ("25.75.52.98")
 #define DEFAULT_SERVER_PORT (25565)
 
-typedef enum NetworkState
+typedef enum COMiC_Network_NetworkState
 {
     HANDSHAKING = -1, PLAY, STATUS, LOGIN
-} NetworkState;
+} COMiC_Network_NetworkState;
 
 // Packet id is prefixed with Network State(raw id + 1)
-typedef enum PacketID
+typedef enum COMiC_Network_PacketID
 {
 // HANDSHAKING:
     HANDSHAKE_C2S_PACKET_ID,

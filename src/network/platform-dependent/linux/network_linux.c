@@ -1,6 +1,6 @@
 #include "network_linux.h"
 
-void network_init(ServerNetInfo *info)
+void COMiC_Network_init(COMiC_Network_ServerNetInfo *info)
 {
     printf("---Starting COMiC server v%s on Linux---\n", COMiC_VERSION);
 
@@ -26,10 +26,10 @@ void network_init(ServerNetInfo *info)
     puts("Done");
 }
 
-void network_listen_to_connections(
-        ServerNetInfo server,
-        ClientNetInfo *client,
-        void (*onPacketReceive)(ClientNetInfo *, ByteBuffer *)
+void COMiC_Network_listen_to_connections(
+        COMiC_Network_ServerNetInfo server,
+        COMiC_Network_ClientNetInfo *client,
+        void (*onPacketReceive)(COMiC_Network_ClientNetInfo *, COMiC_Network_ByteBuffer *)
 )
 {
     // Listen to incoming connections:
@@ -60,7 +60,7 @@ void network_listen_to_connections(
 
         if (message_length > 0)
         {
-            ByteBuffer buf = {.bytes = bytes, .index = 0, .size = network_buffer_read_var_int(&buf)};
+            COMiC_Network_ByteBuffer buf = {.bytes = bytes, .index = 0, .size = COMiC_Network_Buffer_read_var_int(&buf)};
             onPacketReceive(client, &buf);
         }
         else if (message_length == 0)
@@ -76,14 +76,14 @@ void network_listen_to_connections(
     }
 }
 
-void network_send_packet(ClientNetInfo *connection, ByteBuffer *buf)
+void COMiC_Network_send_packet(COMiC_Network_ClientNetInfo *connection, COMiC_Network_ByteBuffer *buf)
 {
-    network_buffer_prepare(buf);
+    COMiC_Network_Buffer_prepare(buf);
     send(connection->socket, buf->bytes, (size_t) buf->size, 0);
     free(buf);
 }
 
-void network_cleanup(ServerNetInfo info)
+void COMiC_Network_cleanup(COMiC_Network_ServerNetInfo server)
 {
-    close(info.socket);
+    close(server.socket);
 }

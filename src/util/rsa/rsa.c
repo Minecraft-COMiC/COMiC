@@ -1,6 +1,6 @@
 #include "rsa.h"
 
-RSA *util_rsa_new(void)
+RSA *COMiC_Util_RSA_new(void)
 {
     BIGNUM *bne = BN_new();
     BN_set_word(bne, RSA_F4);
@@ -10,7 +10,7 @@ RSA *util_rsa_new(void)
     return rsa;
 }
 
-EVP_PKEY *util_rsa_create_key(RSA *pRSA)
+EVP_PKEY *COMiC_Util_RSA_create_key(RSA *pRSA)
 {
     EVP_PKEY *pKey = EVP_PKEY_new();
     if (pRSA && pKey && EVP_PKEY_assign_RSA(pKey, pRSA))
@@ -39,12 +39,12 @@ EVP_PKEY *util_rsa_create_key(RSA *pRSA)
     return pKey;
 }
 
-void util_rsa_generate_keypair(Keypair *keypair)
+void COMiC_Util_RSA_generate_keypair(COMiC_Util_RSA_Keypair *keypair)
 {
     printf("Generating RSA keypair... ");
 
-    RSA *rsa = util_rsa_new();
-    if ((keypair->privateKey = util_rsa_create_key(rsa)) == NULL || (keypair->publicKey = util_rsa_create_key(rsa)) == NULL)
+    RSA *rsa = COMiC_Util_RSA_new();
+    if ((keypair->privateKey = COMiC_Util_RSA_create_key(rsa)) == NULL || (keypair->publicKey = COMiC_Util_RSA_create_key(rsa)) == NULL)
     {
         printf("%s", ERR_error_string(ERR_get_error(), NULL));
         exit(1);

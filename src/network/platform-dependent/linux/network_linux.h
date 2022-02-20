@@ -11,27 +11,27 @@
 #include "../../network.h"
 #include "../../network_constants.h"
 
-struct ServerNetInfo
+struct COMiC_Network_ServerNetInfo
 {
     struct sockaddr_in address;
     int socket;
 };
 
-struct ClientNetInfo
+struct COMiC_Network_ClientNetInfo
 {
     struct sockaddr_in address;
     int socket;
-    NetworkState state;
+    COMiC_Network_NetworkState state;
     char *username;
-    JUUID uuid;
+    COMiC_Util_JUUID uuid;
 };
 
-void network_init(ServerNetInfo *info);
+void COMiC_Network_init(COMiC_Network_ServerNetInfo *server);
 
-void network_listen_to_connections(ServerNetInfo server, ClientNetInfo *client, void (*onPacketReceive)(ClientNetInfo *, ByteBuffer *));
+void COMiC_Network_listen_to_connections(COMiC_Network_ServerNetInfo server, COMiC_Network_ClientNetInfo *client, void (*onPacketReceive)(COMiC_Network_ClientNetInfo *, COMiC_Network_ByteBuffer *));
 
-void network_send_packet(ClientNetInfo *connection, ByteBuffer *buf);
+void COMiC_Network_send_packet(COMiC_Network_ClientNetInfo *connection, COMiC_Network_ByteBuffer *buf);
 
-void network_cleanup(ServerNetInfo info);
+void COMiC_Network_cleanup(COMiC_Network_ServerNetInfo server);
 
 #endif //COMIC_NETWORK_LINUX_H

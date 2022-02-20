@@ -8,16 +8,16 @@
 #include <openssl/pem.h>
 #include <openssl/err.h>
 
-typedef struct Keypair
+typedef struct COMiC_Util_RSA_Keypair
 {
     EVP_PKEY *publicKey;
     EVP_PKEY *privateKey;
-} Keypair;
+} COMiC_Util_RSA_Keypair;
 
-RSA *util_rsa_new(void);
+RSA *COMiC_Util_RSA_new(void);
 
-EVP_PKEY *util_rsa_create_key(RSA *pRSA);
+EVP_PKEY *COMiC_Util_RSA_create_key(RSA *pRSA);
 
-void util_rsa_generate_keypair(Keypair *keypair);
+void COMiC_Util_RSA_generate_keypair(COMiC_Util_RSA_Keypair *keypair);
 
 #endif //COMIC_RSA_H

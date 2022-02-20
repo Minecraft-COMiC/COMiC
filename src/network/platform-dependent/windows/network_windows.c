@@ -1,6 +1,6 @@
 #include "network_windows.h"
 
-void network_init(ServerNetInfo *info)
+void COMiC_Network_init(COMiC_Network_ServerNetInfo *server)
 {
     printf("---Starting COMiC server v%s on Windows---\n", COMiC_VERSION);
 
@@ -14,7 +14,7 @@ void network_init(ServerNetInfo *info)
     puts("Done");
 
     printf("Creating socket... ");
-    if ((info->socket = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
+    if ((server->socket = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
     {
         printf("Could not create socket: %d", WSAGetLastError());
         exit(1);
@@ -22,12 +22,12 @@ void network_init(ServerNetInfo *info)
     puts("Done");
 
     // Prepare the server structure:
-    info->address.sin_family = AF_INET;
-    InetPton(AF_INET, DEFAULT_SERVER_IP, &info->address.sin_addr.s_addr);
-    info->address.sin_port = htons(DEFAULT_SERVER_PORT);
+    server->address.sin_family = AF_INET;
+    InetPton(AF_INET, DEFAULT_SERVER_IP, &server->address.sin_addr.s_addr);
+    server->address.sin_port = htons(DEFAULT_SERVER_PORT);
 
     printf("Binding... ");
-    if (bind(info->socket, (struct sockaddr *) &info->address, sizeof(info->address)) ==
+    if (bind(server->socket, (struct sockaddr *) &server->address, sizeof(server->address)) ==
         SOCKET_ERROR)
     {
         printf("Bind failed with error code : %d", WSAGetLastError());
@@ -36,10 +36,10 @@ void network_init(ServerNetInfo *info)
     puts("Done");
 }
 
-void network_listen_to_connections(
-        ServerNetInfo server,
-        ClientNetInfo *client,
-        void (*onPacketReceive)(ClientNetInfo *, ByteBuffer *)
+void COMiC_Network_listen_to_connections(
+        COMiC_Network_ServerNetInfo server,
+        COMiC_Network_ClientNetInfo *client,
+        void (*onPacketReceive)(COMiC_Network_ClientNetInfo *, COMiC_Network_ByteBuffer *)
 )
 {
     // Listen to incoming connections:
@@ -66,7 +66,7 @@ void network_listen_to_connections(
 
         if (message_length > 0)
         {
-            ByteBuffer buf = {.bytes = bytes, .index = 0, .size = network_buffer_read_var_int(&buf)};
+            COMiC_Network_ByteBuffer buf = {.bytes = bytes, .index = 0, .size = COMiC_Network_Buffer_read_var_int(&buf)};
 
             onPacketReceive(client, &buf);
         }
@@ -83,14 +83,14 @@ void network_listen_to_connections(
     }
 }
 
-void network_send_packet(ClientNetInfo *connection, ByteBuffer *buf)
+void COMiC_Network_send_packet(COMiC_Network_ClientNetInfo *connection, COMiC_Network_ByteBuffer *buf)
 {
-    network_buffer_prepare(buf);
+    COMiC_Network_Buffer_prepare(buf);
     send(connection->socket, buf->bytes, (int) buf->size, 0);
     free(buf);
 }
 
-void network_cleanup(ServerNetInfo info)
+void COMiC_Network_cleanup(COMiC_Network_ServerNetInfo info)
 {
     closesocket(info.socket);
     WSACleanup();

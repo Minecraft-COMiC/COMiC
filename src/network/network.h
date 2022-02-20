@@ -10,10 +10,10 @@
 #include "main.h"
 #include "buffer/buffer.h"
 
-typedef struct ClientNetInfo ClientNetInfo;
-typedef struct ServerNetInfo ServerNetInfo;
+typedef struct COMiC_Network_ClientNetInfo COMiC_Network_ClientNetInfo;
+typedef struct COMiC_Network_ServerNetInfo COMiC_Network_ServerNetInfo;
 
-#ifdef WINDOWS
+#if defined(WINDOWS)
     #include "platform-dependent/windows/network_windows.h"
 #elif defined(LINUX)
     #include "platform-dependent/linux/network_linux.h"

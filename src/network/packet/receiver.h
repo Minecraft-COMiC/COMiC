@@ -5,6 +5,6 @@
 #include "sender.h"
 #include "../network.h"
 
-void network_handle_packet(ClientNetInfo *connection, ByteBuffer *buf);
+void COMiC_Network_handle_packet(COMiC_Network_ClientNetInfo *connection, COMiC_Network_ByteBuffer *buf);
 
 #endif //COMIC_RECEIVER_H

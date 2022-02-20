@@ -7,34 +7,34 @@
 #include <openssl/rand.h>
 #include <openssl/md5.h>
 
-typedef struct JUUID
+typedef struct COMiC_Util_JUUID
 {
     long long mostSigBits;
     long long leastSigBits;
-} JUUID;
+} COMiC_Util_JUUID;
 
-JUUID util_uuid_from_byte_array(const char*);
+COMiC_Util_JUUID COMiC_Util_JUUID_from_byte_array(const char*);
 
-JUUID util_uuid_new(long long, long long);
+COMiC_Util_JUUID COMiC_Util_JUUID_new(long long, long long);
 
-JUUID util_uuid_random();
+COMiC_Util_JUUID COMiC_Util_JUUID_random();
 
-JUUID util_uuid_name_uuid_from_bytes(const char[16]);
+COMiC_Util_JUUID COMiC_Util_JUUID_name_uuid_from_bytes(const char);
 
-JUUID util_uuid_from_string(char *);
+COMiC_Util_JUUID COMiC_Util_JUUID_from_string(char *);
 
-int util_uuid_get_version(JUUID uuid);
+int COMiC_Util_JUUID_get_version(COMiC_Util_JUUID uuid);
 
-int util_uuid_get_variant(JUUID uuid);
+int COMiC_Util_JUUID_get_variant(COMiC_Util_JUUID uuid);
 
-long long util_uuid_get_timestamp(JUUID uuid);
+long long COMiC_Util_JUUID_get_timestamp(COMiC_Util_JUUID uuid);
 
-int util_uuid_get_clock_sequence(JUUID uuid);
+int COMiC_Util_JUUID_get_clock_sequence(COMiC_Util_JUUID uuid);
 
-long long util_uuid_get_node(JUUID uuid);
+long long COMiC_Util_JUUID_get_node(COMiC_Util_JUUID uuid);
 
-void util_uuid_to_string(JUUID uuid, char  [37]);
+void COMiC_Util_JUUID_to_string(COMiC_Util_JUUID uuid, char *out);
 
-int util_uuid_are_equal(JUUID first, JUUID second);
+int COMiC_Util_JUUID_are_equal(COMiC_Util_JUUID first, COMiC_Util_JUUID second);
 
 #endif //COMIC_JUUID_H

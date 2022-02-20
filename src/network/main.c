@@ -1,6 +1,6 @@
 #include "main.h"
 
-static Keypair keypair;
+static COMiC_Util_RSA_Keypair keypair;
 
 EVP_PKEY *getPublicKey()
 {
@@ -9,13 +9,13 @@ EVP_PKEY *getPublicKey()
 
 int main(void)
 {
-    ServerNetInfo info;
+    COMiC_Network_ServerNetInfo info;
     network_init(&info);
 
-    util_rsa_generate_keypair(&keypair);
+    COMiC_Util_RSA_generate_keypair(&keypair);
 
-    ClientNetInfo client = (ClientNetInfo) {.state = HANDSHAKING};
-    network_listen_to_connections(info, &client, network_handle_packet);
+    COMiC_Network_ClientNetInfo client = (COMiC_Network_ClientNetInfo) {.state = HANDSHAKING};
+    network_listen_to_connections(info, &client, COMiC_Network_handle_packet);
 
     network_cleanup(info);
 
