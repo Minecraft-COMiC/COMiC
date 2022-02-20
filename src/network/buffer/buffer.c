@@ -5,7 +5,7 @@ ByteBuffer network_buffer_new(unsigned int capacity)
     return (ByteBuffer) {malloc(capacity), 5, capacity};
 }
 
-ByteBuffer network_buffer_new_with_default_capacity()
+ByteBuffer network_buffer_new_with_default_capacity(void)
 {
     return network_buffer_new(100);
 }

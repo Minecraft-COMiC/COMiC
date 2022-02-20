@@ -3,7 +3,7 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include "../util.h"
+#include "../../util/util.h"
 #include "../network_constants.h"
 
 typedef struct ByteBuffer
@@ -15,7 +15,7 @@ typedef struct ByteBuffer
 
 ByteBuffer network_buffer_new(unsigned int);
 
-ByteBuffer network_buffer_new_with_default_capacity();
+ByteBuffer network_buffer_new_with_default_capacity(void);
 
 void network_buffer_prepare(ByteBuffer *buf);
 

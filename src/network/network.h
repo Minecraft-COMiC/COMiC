@@ -6,7 +6,7 @@
 #define COMiC_VERSION ("0.0.1")
 
 #include "network_constants.h"
-#include "util.h"
+#include "../util/util.h"
 #include "main.h"
 #include "buffer/buffer.h"
 
