@@ -14,32 +14,33 @@ set(COMiC_VERSION_SERIAL 0)
 set(COMiC_VERSION ${COMiC_VERSION_MAJOR}.${COMiC_VERSION_MINOR}.${COMiC_VERSION_PATCH}${COMiC_VERSION_LEVEL}${COMiC_VERSION_SERIAL})
 message(STATUS "Building COMiC ${COMiC_VERSION}")
 
-add_subdirectory(os)
 
 file(
-        GLOB
+        GLOB_RECURSE
         __COMiC_SOURCES
         LIST_DIRECTORIES false
         ./src/*.c
 )
 
 add_library(
-        __COMiC_static
-        STATIC
-
-        ${__COMiC_SOURCES}
-)
-
-add_library(
-        __COMiC_shared
+        __COMiC
         SHARED
 
         src/empty.c
+        #        ${__COMiC_OS_SOURCES}
+        #        ${__COMiC_SOURCES}
 )
 
-target_link_libraries(__COMiC_static PRIVATE COMiC::os)
-target_link_libraries(__COMiC_shared PRIVATE __COMiC_static)
-target_include_directories(__COMiC_shared PUBLIC include)
+target_include_directories(__COMiC PUBLIC ./include)
 
-add_library(COMiC ALIAS __COMiC_shared)
+add_subdirectory(os)
 
+
+
+install(
+        TARGETS __COMiC
+        RUNTIME DESTINATION ./bin
+        PUBLIC_HEADER DESTINATION ./include
+)
+
+add_library(COMiC ALIAS __COMiC)
