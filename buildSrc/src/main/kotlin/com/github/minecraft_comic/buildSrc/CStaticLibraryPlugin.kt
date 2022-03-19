@@ -32,7 +32,7 @@ class CStaticLibraryPlugin @Inject constructor(
     override fun apply(target: Project) {
         target.pluginManager.apply("standard-tool-chains")
         target.pluginManager.apply("idea")
-
+        
         val idea = target.extensions["idea"] as IdeaModel //(IdeaModel.() -> Any) -> Unit
 
         val extension = target.extensions.create<CStaticLibraryConfigureScope>("library", target)
