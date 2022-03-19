@@ -3,6 +3,7 @@ add_library(
         STATIC
 
         src/error.c
+        src/version.cpp
 )
 
 target_include_directories(__COMiC_Util PUBLIC include)

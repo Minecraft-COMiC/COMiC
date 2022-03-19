@@ -39,5 +39,5 @@ void COMiC_Error_Init(
     _COMiC_Unlock(COMiC_ErrNo *, self->err_no) = COMiC_ErrNo_NoError;
     _COMiC_Unlock(const char **, self->message) = NULL;
     _COMiC_Unlock(const void **, self->external_data) = NULL;
-    _COMiC_Unlock(const void (**)(void *), self->err_no) = COMiC_Error_NoDealloc;
+    _COMiC_Unlock(const void (**)(void *), self->err_no) = (const void (*)(void *)) COMiC_Error_NoDealloc;
 }
