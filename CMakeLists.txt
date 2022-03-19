@@ -17,4 +17,9 @@ add_subdirectory(libs/util)
 add_subdirectory(libs/os)
 add_subdirectory(libs/core)
 
-add_dependencies(__COMiC_Core COMiC::OS)
+add_executable(
+        run
+        run.c
+)
+
+target_link_libraries(run COMiC::Core)

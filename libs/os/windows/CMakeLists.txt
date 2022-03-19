@@ -2,6 +2,8 @@ add_library(
         __COMiC_OS_Windows
         STATIC
 
+        src/error.h
+        src/error.c
         src/heap.c
 )
 

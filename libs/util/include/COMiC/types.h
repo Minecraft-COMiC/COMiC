@@ -1,9 +1,10 @@
 #ifndef COMiC_TYPES_H
 # define COMiC_TYPES_H
 
-# ifndef NULL
-#  define NULL ((void *)0)
+# ifdef NULL
+#  undef NULL
 # endif
+# define NULL ((void *)0)
 
 typedef int COMiC_Bool;
 # define COMiC_FALSE (0)
@@ -15,7 +16,9 @@ typedef COMiC_Bool COMiC_IfError;
 
 typedef size_t COMiC_USize;
 
-# define _COMiC_Unlock(TYPE, MEMBER) (*(TYPE*)&(MEMBER))
+# define COMiC_Constructor
+# define COMiC_Destructor
+# define _COMiC_Unlock(TYPE, MEMBER) (*(TYPE)&(MEMBER))
 
 # define COMiC_Optional(VALUE)
 

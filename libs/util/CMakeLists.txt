@@ -1,9 +1,11 @@
 add_library(
         __COMiC_Util
-        INTERFACE
+        STATIC
+
+        src/error.c
 )
 
-target_include_directories(__COMiC_Util INTERFACE include)
+target_include_directories(__COMiC_Util PUBLIC include)
 
 add_library(
         COMiC::Util

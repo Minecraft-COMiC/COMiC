@@ -11,12 +11,19 @@ extern "C" {
 
 typedef struct COMiC_OS_Heap COMiC_OS_Heap;
 
+COMiC_Constructor
 COMiC_IfError COMiC_OS_Heap_Init(
         COMiC_Out COMiC_OS_Heap *self,
         COMiC_In COMiC_Optional(0) COMiC_USize max_size,
         COMiC_Out COMiC_Optional(NULL) COMiC_Error *error
 );
 
+
+COMiC_Destructor
+COMiC_IfError COMiC_OS_Heap_Finalize(
+        COMiC_Out COMiC_OS_Heap *self,
+        COMiC_Out COMiC_Optional(NULL) COMiC_Error *error
+);
 
 # ifdef __cplusplus
 };
