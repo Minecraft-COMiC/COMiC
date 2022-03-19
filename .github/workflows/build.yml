@@ -1,0 +1,40 @@
+name: CMake
+
+on:
+  push:
+    branches: [ dev, master ]
+  pull_request:
+    branches: [ dev, master ]
+
+jobs:
+  c:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+
+    steps:
+    - uses: actions/checkout@v2
+      id: checkout
+
+    - name: Configure CMake
+      if: ${{steps.checkout.outcome == 'success'}}
+      id: configure
+      run: cmake -B ./build -DCMAKE_BUILD_TYPE=Release
+
+    - name: Build
+      if: ${{steps.configure.outcome == 'success'}}
+      id: install 
+      run: cmake --install ./build --prefix ./dist
+
+    - name: Test
+      working-directory: ${{github.workspace}}/build
+      run: ctest -C ${{env.BUILD_TYPE}}
+      
+    - name: Store wheel
+      if: ${{steps.install.outcome == 'success'}}
+      uses: actions/upload-artifact@v2
+      with:
+        name: c
+        path: ./dist
+      
