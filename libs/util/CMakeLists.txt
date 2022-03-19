@@ -1,15 +1,23 @@
 add_library(
-        __COMiC_Util
+        util
         STATIC
 
         src/error.c
         src/version.cpp
 )
 
-target_include_directories(__COMiC_Util PUBLIC include)
+target_include_directories(util PUBLIC include)
 
 add_library(
         COMiC::Util
         ALIAS
-        __COMiC_Util
+        util
+)
+
+install(
+        TARGETS util
+)
+install(
+        DIRECTORY ./include
+        DESTINATION ./
 )

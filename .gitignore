@@ -2,3 +2,4 @@ build/
 .gradle/
 .idea/
 cmake-build-*/
+dist/

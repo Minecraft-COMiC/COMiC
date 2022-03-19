@@ -1,5 +1,5 @@
 add_library(
-        __COMiC_OS_Windows
+        os
         STATIC
 
         src/error.h
@@ -7,12 +7,20 @@ add_library(
         src/heap.c
 )
 
-target_link_libraries(__COMiC_OS_Windows PUBLIC COMiC::Util)
-target_include_directories(__COMiC_OS_Windows PUBLIC include)
-target_include_directories(__COMiC_OS_Windows PUBLIC ${COMiC_COMMON_OS_HEADER_DIR})
+target_link_libraries(os PUBLIC COMiC::Util)
+target_include_directories(os PUBLIC include)
+target_include_directories(os PUBLIC ${COMiC_COMMON_OS_HEADER_DIR})
 
 add_library(
         COMiC::OS
         ALIAS
-        __COMiC_OS_Windows
+        os
+)
+
+install(
+        TARGETS os
+)
+install(
+        DIRECTORY ./include
+        DESTINATION ./
 )

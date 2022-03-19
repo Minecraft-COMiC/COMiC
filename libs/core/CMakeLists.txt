@@ -1,15 +1,24 @@
 add_library(
-        __COMiC_Core
+        core
         STATIC
 
         src/application.c
 )
 
-target_link_libraries(__COMiC_Core PUBLIC COMiC::OS)
-target_include_directories(__COMiC_Core PUBLIC include)
+target_link_libraries(core PUBLIC COMiC::OS)
+target_include_directories(core PUBLIC include)
 
 add_library(
         COMiC::Core
         ALIAS
-        __COMiC_Core
+        core
+)
+
+
+install(
+        TARGETS core
+)
+install(
+        DIRECTORY ./include
+        DESTINATION ./
 )
