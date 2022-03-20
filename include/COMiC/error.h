@@ -11,8 +11,10 @@ typedef enum COMiC_ErrNo
 {
     COMiC_ErrNo_NoError = 0,
     COMiC_ErrNo_External = 1,
-    COMiC_ErrNo_FailedCreateHeap = 2,
-    COMiC_ErrNo_FailedDestroyHeap = 3,
+    COMiC_ErrNo_BoundLanguageException = 2,
+    COMiC_ErrNo_FailedCreateHeap = 3,
+    COMiC_ErrNo_FailedDestroyHeap = 4,
+    COMiC_ErrNo_MemoryError = 5,
 } COMiC_ErrNo;
 
 void COMiC_Error_NoDealloc(void *);
@@ -23,7 +25,9 @@ typedef struct COMiC_Error
     COMiC_Optional(NULL) char *message;
     COMiC_Optional(NULL) void *external_data;
 
-    COMiC_Optional(COMiC_Error_NoDealloc) void (*free_func)(void *);
+    COMiC_Optional(COMiC_Error_NoDealloc)
+
+    void (*free_func)(void *);
 } COMiC_Error;
 
 COMiC_Constructor

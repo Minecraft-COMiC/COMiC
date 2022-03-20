@@ -1,0 +1,13 @@
+set(COMiC_COMMON_OS_HEADER_DIR include)
+
+message(STATUS "Searching for operating system API")
+if (EXISTS COMiC::OS)
+    message(STATUS "Using external API")
+else ()
+    if (${WIN32})
+        message(STATUS "Using default Windows API")
+        add_subdirectory(windows)
+    else ()
+        message(FATAL_ERROR "Unsupported operating system")
+    endif ()
+endif ()

@@ -30,15 +30,6 @@ COMiC_IfError COMiC_Application_Finalize(
         COMiC_Out COMiC_Optional(NULL) COMiC_Error *error
 );
 
-
-static inline void *COMiC_MAllocA(
-        COMiC_In COMiC_Application *app,
-        COMiC_In COMiC_USize size
-)
-{
-    return COMiC_MAlloc(&(app->heap), size);
-}
-
 # ifdef __cplusplus
 };
 # endif
