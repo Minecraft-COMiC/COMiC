@@ -18,7 +18,6 @@ typedef size_t COMiC_USize;
 
 # define COMiC_Constructor
 # define COMiC_Destructor
-# define _COMiC_Unlock(TYPE, MEMBER) (*(TYPE)&(MEMBER))
 
 # define COMiC_Optional(VALUE)
 

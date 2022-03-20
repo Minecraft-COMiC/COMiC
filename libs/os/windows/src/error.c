@@ -26,7 +26,7 @@ void COMiC_OS_Windows_FormatErrorMessage(
             (LPSTR) &(self->message),
             0, NULL
     );
-    _COMiC_Unlock(void (**)(void *), self->free_func) = LocalFree_NoReturn;
-    _COMiC_Unlock(COMiC_ErrNo *, self->err_no) = err_no;
-    _COMiC_Unlock(void **, self->external_data) = NULL;
+    self->free_func = LocalFree_NoReturn;
+    self->err_no = err_no;
+    self->external_data = NULL;
 }

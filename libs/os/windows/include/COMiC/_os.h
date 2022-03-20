@@ -5,7 +5,7 @@
 
 struct COMiC_OS_Heap
 {
-    const HANDLE heap_handle;
+    HANDLE heap_handle;
 };
 
 #endif /* COMiC__OS_H */

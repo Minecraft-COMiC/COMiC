@@ -12,7 +12,7 @@ COMiC_IfError COMiC_OS_Heap_Init(
         COMiC_Out COMiC_Optional(NULL) COMiC_Error *error
 )
 {
-    _COMiC_Unlock(HANDLE *, self->heap_handle) = HeapCreate(0, 0, max_size);
+    self->heap_handle = HeapCreate(0, 0, max_size);
     if (self->heap_handle == NULL)
     {
         if (error != NULL)
@@ -30,7 +30,7 @@ COMiC_IfError COMiC_OS_Heap_Finalize(
         COMiC_Out COMiC_Optional(NULL) COMiC_Error *error
 )
 {
-    if (HeapDestroy(_COMiC_Unlock(HANDLE *, self->heap_handle)) == 0)
+    if (HeapDestroy(self->heap_handle) == 0)
     {
         if (error != NULL)
         {

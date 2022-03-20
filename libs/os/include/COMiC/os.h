@@ -25,6 +25,22 @@ COMiC_IfError COMiC_OS_Heap_Finalize(
         COMiC_Out COMiC_Optional(NULL) COMiC_Error *error
 );
 
+void *COMiC_MAlloc(
+        COMiC_In COMiC_OS_Heap *self,
+        COMiC_In COMiC_USize size
+);
+
+void *COMiC_ReAlloc(
+        COMiC_In COMiC_OS_Heap *self,
+        COMiC_In void *pointer,
+        COMiC_In COMiC_USize size
+);
+
+void COMiC_Free(
+        COMiC_In COMiC_OS_Heap *self,
+        COMiC_In void *pointer
+);
+
 # ifdef __cplusplus
 };
 # endif
