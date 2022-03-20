@@ -1,8 +1,8 @@
 #ifndef COMIC_NETWORK_WINDOWS_H
 #define COMIC_NETWORK_WINDOWS_H
 
-#include <winsock2.h>
-#include <ws2tcpip.h>
+#include <WinSock2.h>
+#include <WS2tcpip.h>
 #include "../../network.h"
 #include "../../network_constants.h"
 
