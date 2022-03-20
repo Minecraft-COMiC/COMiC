@@ -1,7 +1,6 @@
 #include <windows.h>
 
-#include <COMiC/types.h>
-#include <COMiC/error.h>
+#include <COMiC.h>
 
 #include "error.h"
 

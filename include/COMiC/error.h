@@ -25,9 +25,7 @@ typedef struct COMiC_Error
     COMiC_Optional(NULL) char *message;
     COMiC_Optional(NULL) void *external_data;
 
-    COMiC_Optional(COMiC_Error_NoDealloc)
-
-    void (*free_func)(void *);
+    COMiC_Optional(COMiC_Error_NoDealloc) void (*free_func)(void *);
 } COMiC_Error;
 
 COMiC_Constructor
@@ -38,10 +36,10 @@ void COMiC_Error_Init(
 COMiC_Constructor
 void COMiC_Error_Set(
         COMiC_Out COMiC_Error *self,
-        COMiC_ErrNo err_no,
-        COMiC_Optional(NULL) char *message,
-        COMiC_Optional(NULL) void *external_data,
-        COMiC_Optional(COMiC_Error_NoDealloc) void (*free_func)(void *)
+        COMiC_In COMiC_ErrNo err_no,
+        COMiC_In COMiC_Optional(NULL) char *message,
+        COMiC_In COMiC_Optional(NULL) void *external_data,
+        COMiC_In COMiC_Optional(COMiC_Error_NoDealloc) void (*free_func)(void *)
 );
 
 COMiC_Destructor
@@ -51,7 +49,7 @@ void COMiC_Error_Release(
 
 COMiC_Destructor COMiC_Constructor
 static inline void COMiC_Error_Clear(
-        COMiC_Out COMiC_Error *self
+        COMiC_In COMiC_Out COMiC_Error *self
 )
 {
     COMiC_Error_Release(self);

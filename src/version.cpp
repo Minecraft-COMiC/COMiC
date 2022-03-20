@@ -1,4 +1,4 @@
-#include <COMiC/version.h>
+#include <COMiC.h>
 
 static_assert(
         (COMiC_Version_ReleaseLevel == 0xA) ||

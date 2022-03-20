@@ -1,15 +1,14 @@
 #include <windows.h>
 
-#include <COMiC/types.h>
-#include <COMiC/os.h>
+#include <COMiC.h>
 
 #include "error.h"
 
 COMiC_Constructor
 COMiC_IfError COMiC_OS_Heap_Init(
         COMiC_Out COMiC_OS_Heap *self,
-        COMiC_In COMiC_Optional(0) COMiC_USize max_size,
-        COMiC_Out COMiC_Optional(NULL) COMiC_Error *error
+        COMiC_Out COMiC_Error *error,
+        COMiC_In COMiC_Optional(0) COMiC_USize max_size
 )
 {
     self->heap_handle = HeapCreate(0, 0, max_size);
@@ -26,8 +25,8 @@ COMiC_IfError COMiC_OS_Heap_Init(
 
 COMiC_Destructor
 COMiC_IfError COMiC_OS_Heap_Finalize(
-        COMiC_Out COMiC_OS_Heap *self,
-        COMiC_Out COMiC_Optional(NULL) COMiC_Error *error
+        COMiC_In COMiC_OS_Heap *self,
+        COMiC_Out COMiC_Error *error
 )
 {
     if (HeapDestroy(self->heap_handle) == 0)
