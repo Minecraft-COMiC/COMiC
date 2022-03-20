@@ -1,5 +1,5 @@
-#include <COMiC/types.h>
-#include <COMiC/error.h>
+#include "COMiC/types.h"
+#include "COMiC/error.h"
 
 COMiC_Destructor
 void COMiC_Error_Release(

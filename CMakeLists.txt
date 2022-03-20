@@ -8,14 +8,48 @@ set(COMiC_VERSION_MAJOR 0)
 set(COMiC_VERSION_MINOR 0)
 set(COMiC_VERSION_MICRO 0)
 set(COMiC_VERSION_LEVEL a)
-set(COMiC_VERSION_SERIAL 0)
+set(COMiC_VERSION_SERIAL 1)
 set(COMiC_VERSION ${COMiC_VERSION_MAJOR}.${COMiC_VERSION_MINOR}.${COMiC_VERSION_MICRO}${COMiC_VERSION_LEVEL}${COMiC_VERSION_SERIAL})
 
 message(STATUS "Building COMiC ${COMiC_VERSION}")
 
-add_subdirectory(libs/util)
-add_subdirectory(libs/os)
-add_subdirectory(libs/core)
+add_library(
+        __COMiC_Headers
+        INTERFACE
+)
+target_include_directories(__COMiC_Headers INTERFACE ./include)
+
+
+add_library(COMiC::Headers ALIAS __COMiC_Headers)
+
+
+add_library(
+        core
+        STATIC
+
+        ./src/application.c
+        ./src/error.c
+        ./src/version.cpp
+        $<TARGET_OBJECTS:COMiC::OS>
+)
+
+
+add_subdirectory(os)
+target_include_directories(core PUBLIC ./include $<TARGET_PROPERTY:COMiC::OS,INCLUDE_DIRECTORIES>)
+
+add_library(COMiC::Core ALIAS core)
+
+install(
+        TARGETS core
+)
+
+install(
+        DIRECTORY ./include
+        DESTINATION ./
+)
+
+
+#####################################################################################
 
 add_executable(
         run
