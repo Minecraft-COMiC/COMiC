@@ -4,7 +4,6 @@
 #include <COMiC/types.h>
 #include <COMiC/error.h>
 
-
 # ifdef __cplusplus
 extern "C" {
 # endif
@@ -17,7 +16,6 @@ COMiC_IfError COMiC_OS_Heap_Init(
         COMiC_In COMiC_Optional(0) COMiC_USize max_size,
         COMiC_Out COMiC_Optional(NULL) COMiC_Error *error
 );
-
 
 COMiC_Destructor
 COMiC_IfError COMiC_OS_Heap_Finalize(
@@ -44,6 +42,9 @@ COMiC_IfError COMiC_Free(
         COMiC_Out COMiC_Error *error,
         COMiC_In void **pointer
 );
+
+typedef struct COMiC_OS_Socket COMiC_OS_Socket;
+typedef struct COMiC_OS_InternetAddress COMiC_OS_InternetAddress;
 
 # ifdef __cplusplus
 };

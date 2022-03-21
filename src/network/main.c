@@ -2,7 +2,7 @@
 
 static COMiC_Util_RSA_Keypair keypair;
 
-EVP_PKEY *getPublicKey()
+EVP_PKEY *GetPublicKey(void)
 {
     return keypair.publicKey;
 }
@@ -10,14 +10,14 @@ EVP_PKEY *getPublicKey()
 int main(void)
 {
     COMiC_Network_ServerNetInfo info;
-    network_init(&info);
+    COMiC_Network_Init(&info);
 
-    COMiC_Util_RSA_generate_keypair(&keypair);
+    COMiC_Util_RSA_GenerateKeypair(&keypair);
 
     COMiC_Network_ClientNetInfo client = (COMiC_Network_ClientNetInfo) {.state = HANDSHAKING};
-    network_listen_to_connections(info, &client, COMiC_Network_handle_packet);
+    COMiC_Network_ListenToConnections(info, &client, COMiC_Network_ReceivePacket);
 
-    network_cleanup(info);
+    COMiC_Network_Finalize(info);
 
     return 0;
 }

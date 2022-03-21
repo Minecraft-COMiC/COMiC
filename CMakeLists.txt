@@ -22,6 +22,8 @@ target_include_directories(__COMiC_Headers INTERFACE ./include)
 
 add_library(COMiC::Headers ALIAS __COMiC_Headers)
 
+set(OPENSSL_USE_STATIC_LIBS TRUE)
+find_package(OpenSSL REQUIRED)
 
 add_library(
         core
@@ -30,12 +32,27 @@ add_library(
         ./src/application.c
         ./src/error.c
         ./src/version.cpp
+
+        ./src/network/buffer.c
+        ./src/network/buffer.h
+        ./src/network/packet/receiver.c
+        ./src/network/packet/receiver.h
+        ./src/network/packet/sender.c
+        ./src/network/packet/sender.h
+
+        ./src/util/juuid/juuid.c
+        ./src/util/juuid/juuid.h
+        ./src/util/rsa/rsa.c
+        ./src/util/rsa/rsa.h
+
         $<TARGET_OBJECTS:COMiC::OS>
 )
 
 
 add_subdirectory(os)
+
 target_include_directories(core PUBLIC ./include $<TARGET_PROPERTY:COMiC::OS,INCLUDE_DIRECTORIES>)
+target_link_libraries(core OpenSSL::Crypto)
 
 add_library(COMiC::Core ALIAS core)
 

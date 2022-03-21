@@ -1,8 +1,8 @@
 #ifndef NETWORKTEST_MAIN_H
 #define NETWORKTEST_MAIN_H
 
-#include "network.h"
+#include "COMiC/network.h"
 
-EVP_PKEY *getPublicKey();
+EVP_PKEY *GetPublicKey(void);
 
 #endif //NETWORKTEST_MAIN_H

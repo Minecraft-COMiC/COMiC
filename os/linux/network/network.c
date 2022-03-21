@@ -1,11 +1,11 @@
-#include "network_linux.h"
+#include "network.h"
 
-void COMiC_Network_init(COMiC_Network_ServerNetInfo *info)
+void COMiC_Network_Init(
+        COMiC_Out COMiC_Network_ServerNetInfo *server
+)
 {
-    printf("---Starting COMiC server v%s on Linux---\n", COMiC_VERSION);
-
     printf("Creating socket... ");
-    if ((info->socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+    if ((server->socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
     {
         printf("Could not create socket: %s", strerror(errno));
         exit(1);
@@ -13,12 +13,12 @@ void COMiC_Network_init(COMiC_Network_ServerNetInfo *info)
     puts("Done");
 
     // Prepare the server structure:
-    info->address.sin_family = AF_INET;
-    inet_pton(AF_INET, DEFAULT_SERVER_IP, &info->address.sin_addr.s_addr);
-    info->address.sin_port = htons(DEFAULT_SERVER_PORT);
+    server->address.sin_family = AF_INET;
+    inet_pton(AF_INET, DEFAULT_SERVER_IP, &server->address.sin_addr.s_addr);
+    server->address.sin_port = htons(DEFAULT_SERVER_PORT);
 
     printf("Binding... ");
-    if (bind(info->socket, (struct sockaddr *) &info->address, sizeof(info->address)) < 0)
+    if (bind(server->socket, (struct sockaddr *) &server->address, sizeof(server->address)) < 0)
     {
         printf("Bind failed: %s", strerror(errno));
         exit(1);
@@ -26,10 +26,10 @@ void COMiC_Network_init(COMiC_Network_ServerNetInfo *info)
     puts("Done");
 }
 
-void COMiC_Network_listen_to_connections(
-        COMiC_Network_ServerNetInfo server,
-        COMiC_Network_ClientNetInfo *client,
-        void (*onPacketReceive)(COMiC_Network_ClientNetInfo *, COMiC_Network_ByteBuffer *)
+void COMiC_Network_ListenToConnections(
+        COMiC_In COMiC_Network_ServerNetInfo server,
+        COMiC_In COMiC_Network_ClientNetInfo *client,
+        COMiC_In void (*onPacketReceive)(COMiC_Network_ClientNetInfo *, COMiC_Network_ByteBuffer *)
 )
 {
     // Listen to incoming connections:
@@ -44,7 +44,7 @@ void COMiC_Network_listen_to_connections(
     // Accept incoming connection:
     socklen_t c = sizeof(client->address);
     client->socket = (int) accept(server.socket, (struct sockaddr *) &client->address, &c);
-    if (client->socket < 0 )
+    if (client->socket < 0)
     {
         printf("Accept failed with error code : %s", strerror(errno));
         exit(1);
@@ -60,7 +60,8 @@ void COMiC_Network_listen_to_connections(
 
         if (message_length > 0)
         {
-            COMiC_Network_ByteBuffer buf = {.bytes = bytes, .index = 0, .size = COMiC_Network_Buffer_read_var_int(&buf)};
+            COMiC_Network_ByteBuffer buf = {.bytes = bytes, .index = 0, .size = COMiC_Network_Buffer_ReadVarInt(
+                    &buf)};
             onPacketReceive(client, &buf);
         }
         else if (message_length == 0)
@@ -76,14 +77,19 @@ void COMiC_Network_listen_to_connections(
     }
 }
 
-void COMiC_Network_send_packet(COMiC_Network_ClientNetInfo *connection, COMiC_Network_ByteBuffer *buf)
+void COMiC_Network_SendPacket(
+        COMiC_In COMiC_Network_ClientNetInfo *connection,
+        COMiC_In COMiC_Network_ByteBuffer *buf
+)
 {
-    COMiC_Network_Buffer_prepare(buf);
+    COMiC_Network_Buffer_Prepare(buf);
     send(connection->socket, buf->bytes, (size_t) buf->size, 0);
     free(buf);
 }
 
-void COMiC_Network_cleanup(COMiC_Network_ServerNetInfo server)
+void COMiC_Network_Finalize(
+        COMiC_In COMiC_Network_ServerNetInfo server
+)
 {
     close(server.socket);
 }

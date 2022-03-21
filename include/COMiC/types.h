@@ -1,10 +1,12 @@
 #ifndef COMiC_TYPES_H
 # define COMiC_TYPES_H
 
+#include <stdlib.h>
+
 # ifdef NULL
 #  undef NULL
 # endif
-# define NULL ((void *)0)
+# define NULL ((void *) 0)
 
 typedef int COMiC_Bool;
 # define COMiC_FALSE (0)
