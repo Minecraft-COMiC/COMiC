@@ -23,7 +23,7 @@ extern "C" {
 
 struct COMiC_Application
 {
-    COMiC_OS_Heap heap;
+    COMiC_Heap heap;
 };
 
 

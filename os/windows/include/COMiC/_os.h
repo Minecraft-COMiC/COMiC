@@ -7,12 +7,12 @@
 extern "C" {
 # endif
 
-struct COMiC_OS_Heap
+struct COMiC_Heap
 {
     HANDLE heap_handle;
 };
 
-struct COMiC_OS_Thread
+struct COMiC_Thread
 {
     COMiC_Application *app;
     HANDLE thread_handle;

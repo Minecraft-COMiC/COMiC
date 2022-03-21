@@ -29,11 +29,14 @@ add_library(
 
         ./src/application.c
         ./src/error.c
-        ./src/version.cpp
+        ./src/chunk.c
+        ./src/validate_version.cpp
+        ./src/validate_type_sizes.cpp
         $<TARGET_OBJECTS:COMiC::OS>
 )
 
 
+set_target_properties(core PROPERTIES LINKER_LANGUAGE C)
 add_subdirectory(os)
 target_include_directories(core PUBLIC ./include $<TARGET_PROPERTY:COMiC::OS,INCLUDE_DIRECTORIES>)
 

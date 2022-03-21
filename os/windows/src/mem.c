@@ -5,8 +5,9 @@
 #include "error.h"
 
 COMiC_IfError COMiC_Alloc(
-        COMiC_In COMiC_OS_Heap *self,
+        COMiC_In COMiC_Heap *self,
         COMiC_Out COMiC_Error *error,
+        COMiC_In COMiC_Optional(NULL) char *error_message,
         COMiC_Out void **pointer,
         COMiC_In COMiC_USize size
 )
@@ -22,7 +23,7 @@ COMiC_IfError COMiC_Alloc(
         COMiC_Error_Set(
                 error,
                 COMiC_ErrNo_MemoryError,
-                NULL,
+                error_message,
                 NULL,
                 COMiC_Error_NoDealloc
         );
@@ -32,8 +33,9 @@ COMiC_IfError COMiC_Alloc(
 }
 
 COMiC_IfError COMiC_ReAlloc(
-        COMiC_In COMiC_OS_Heap *self,
+        COMiC_In COMiC_Heap *self,
         COMiC_Out COMiC_Error *error,
+        COMiC_In COMiC_Optional(NULL) char *error_message,
         COMiC_In COMiC_Out void **pointer,
         COMiC_In COMiC_USize new_size
 )
@@ -51,7 +53,7 @@ COMiC_IfError COMiC_ReAlloc(
         COMiC_Error_Set(
                 error,
                 COMiC_ErrNo_MemoryError,
-                NULL,
+                error_message,
                 NULL,
                 COMiC_Error_NoDealloc
         );
@@ -61,7 +63,7 @@ COMiC_IfError COMiC_ReAlloc(
 }
 
 COMiC_IfError COMiC_Free(
-        COMiC_In COMiC_OS_Heap *self,
+        COMiC_In COMiC_Heap *self,
         COMiC_Out COMiC_Error *error,
         COMiC_In void **pointer
 )
@@ -69,7 +71,7 @@ COMiC_IfError COMiC_Free(
     if (HeapFree(
             self->heap_handle,
             0,
-            pointer
+            *pointer
     ) == 0)
     {
         COMiC_OS_Windows_FormatErrorMessage(

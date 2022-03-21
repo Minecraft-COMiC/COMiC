@@ -7,7 +7,7 @@ COMiC_IfError COMiC_Application_Init(
         COMiC_In COMiC_Optional(0) COMiC_USize max_heap_size
 )
 {
-    if (COMiC_OS_Heap_Init(
+    if (COMiC_Heap_Init(
             &(self->heap),
             error,
             max_heap_size
@@ -24,7 +24,7 @@ COMiC_IfError COMiC_Application_Finalize(
         COMiC_Out COMiC_Optional(NULL) COMiC_Error *error
 )
 {
-    if (COMiC_OS_Heap_Finalize(
+    if (COMiC_Heap_Finalize(
             &(self->heap),
             error
     ))

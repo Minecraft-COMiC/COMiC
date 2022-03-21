@@ -1,12 +1,14 @@
 #include <stdio.h>
 
-#include <COMiC/core.h>
+#include <COMiC.h>
 
 int main()
 {
     COMiC_Application app;
     COMiC_Error err;
     char *const some_string;
+    COMiC_Chunk_Block t;
+
 
     COMiC_Error_Init(&err);
     if (COMiC_Application_Init(&app, &err, 0))
@@ -18,6 +20,7 @@ int main()
     if (COMiC_Alloc(
             &(app.heap),
             &err,
+            "some string",
             (void **) &some_string,
             500
     ))

@@ -4,8 +4,8 @@
 
 
 COMiC_Constructor
-COMiC_IfError COMiC_OS_Thread_WrapCurrent(
-        COMiC_Out COMiC_OS_Thread *self,
+COMiC_IfError COMiC_Thread_WrapCurrent(
+        COMiC_Out COMiC_Thread *self,
         COMiC_Out COMiC_Error *error,
         COMiC_In COMiC_Application *owner
 )
@@ -16,8 +16,8 @@ COMiC_IfError COMiC_OS_Thread_WrapCurrent(
 }
 
 COMiC_Destructor
-COMiC_IfError COMiC_OS_Thread_Release(
-        COMiC_Out COMiC_OS_Thread *self,
+COMiC_IfError COMiC_Thread_Release(
+        COMiC_Out COMiC_Thread *self,
         COMiC_Out COMiC_Error *error
 )
 {
