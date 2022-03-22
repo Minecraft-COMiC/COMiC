@@ -78,7 +78,6 @@ static inline COMiC_IfError _COMiC_ChunkExtraBuffer_Push(
     page->block_size -= pages_required;
     if (page->block_size == 0)
     {
-        *stored = (void *) page;
         if (page->prev != NULL)
         {
             page->prev->next = page->next;
@@ -88,7 +87,7 @@ static inline COMiC_IfError _COMiC_ChunkExtraBuffer_Push(
             page->next->prev = page->prev;
         }
         COMiC_ChunkExtraBuffer_Page_InitMeta(
-                (struct COMiC_ChunkExtraBuffer_Page_Meta *) (*stored),
+                page,
                 pages_required,
                 page->owner,
                 COMiC_FALSE,

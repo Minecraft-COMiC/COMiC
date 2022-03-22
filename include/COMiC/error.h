@@ -17,6 +17,7 @@ typedef enum COMiC_ErrNo
     COMiC_ErrNo_MemoryError = 5,
     COMiC_ErrNo_EmptyAlloc = 6,
     COMiC_ErrNo_FreeInvalidPointer = 7,
+    COMiC_ErrNo_Overflow = 8,
 } COMiC_ErrNo;
 
 void COMiC_Error_NoDealloc(void *);

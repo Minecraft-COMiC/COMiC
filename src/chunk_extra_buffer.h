@@ -27,7 +27,7 @@ union _COMiC_ChunkExtraBuffer_SmallPage
 union _COMiC_ChunkExtraBuffer_BigPage
 {
     struct COMiC_ChunkExtraBuffer_Page_Meta meta;
-    COMiC_Byte data[sizeof(union _COMiC_ChunkExtraBuffer_SmallPage) * 4];
+    COMiC_Byte data[sizeof(union _COMiC_ChunkExtraBuffer_SmallPage) * 8];
 };
 
 
