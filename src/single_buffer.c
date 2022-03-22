@@ -106,7 +106,7 @@ COMiC_IfError COMiC_SingleBuffer_Push(
         self->capacity += new_buffer_size;
         self->free += new_buffer_size;
 
-        self->top = page = (struct COMiC_SingleBuffer_PageMeta *) (++new_buffer);
+        self->top = page = (struct COMiC_SingleBuffer_PageMeta *) (new_buffer + 1);
         do
         {
             page->next = (struct COMiC_SingleBuffer_PageMeta *) (((COMiC_UIntPtr) page) + final_page_size);
@@ -148,6 +148,7 @@ COMiC_IfError COMiC_SingleBuffer_Clear(
 )
 {
     struct COMiC_SingleBuffer_Head *p = self->buffer;
+    struct COMiC_SingleBuffer_Head **prev = (struct COMiC_SingleBuffer_Head **) &(self->buffer);
     struct COMiC_SingleBuffer_Head *next;
 
     while (p != NULL)
@@ -155,18 +156,22 @@ COMiC_IfError COMiC_SingleBuffer_Clear(
         next = p->next;
         if (p->used > 0)
         {
+            prev = &(p->next);
+            p = next;
             continue;
         }
+
+        *prev = next;
+        self->capacity -= p->capacity;
         if (COMiC_Free(
                 self->heap,
                 error,
                 (void **) &p
         ))
         {
-            self->buffer = p;
             return COMiC_ERROR;
         }
-        p = next;
+        p = *prev;
     }
     return COMiC_SUCCESS;
 }
