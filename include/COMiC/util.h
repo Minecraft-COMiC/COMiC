@@ -2,6 +2,7 @@
 #define COMIC_UTIL_H
 
 #include <openssl/crypto.h>
+#include <COMiC/types.h>
 
 # ifdef __cplusplus
 extern "C" {
@@ -81,6 +82,33 @@ EVP_PKEY *COMiC_Util_RSA_CreateKey(
 
 void COMiC_Util_RSA_GenerateKeypair(
         COMiC_In COMiC_Util_RSA_Keypair *keypair
+);
+
+typedef struct
+{
+    COMiC_USize size;
+    COMiC_UInt32 buffer[4];
+    COMiC_UInt8 input[64];
+    COMiC_UInt8 digest[16];
+} COMiC_Util_MD5;
+
+COMiC_Constructor
+void COMiC_Util_MD5_Init(
+        COMiC_Out COMiC_Util_MD5 *md5
+);
+
+void COMiC_Util_MD5_Update(
+        COMiC_Out COMiC_Util_MD5 *md5,
+        COMiC_In const COMiC_UInt8 *input_buffer,
+        COMiC_In COMiC_USize len
+);
+
+void COMiC_Util_MD5_Final(
+        COMiC_In COMiC_Util_MD5 *md5
+);
+
+COMiC_UInt8 *COMiC_Util_MD5_FromString(
+        COMiC_In COMiC_String input
 );
 
 # ifdef __cplusplus

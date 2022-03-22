@@ -44,7 +44,7 @@ add_library(
         src/util/rsa.c
 
         $<TARGET_OBJECTS:COMiC::OS>
-)
+        src/util/md5.c)
 
 
 add_subdirectory(os)
