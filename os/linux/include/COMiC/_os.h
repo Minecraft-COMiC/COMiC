@@ -13,7 +13,7 @@ struct COMiC_Network_Socket {
     int socket;
 };
 
-struct COMiC_OS_InternetAddress
+struct COMiC_InternetAddress
 {
     struct sockaddr_in address;
 };

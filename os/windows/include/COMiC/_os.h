@@ -1,21 +1,35 @@
-#ifndef COMiC__OS_WINDOWS_H
-# define COMiC__OS_WINDOWS_H
+#ifndef COMiC__OS_H
+# define COMiC__OS_H
 
-#include <windows.h>
+# include <windows.h>
 
-struct COMiC_OS_Heap
+# ifdef __cplusplus
+extern "C" {
+# endif
+
+struct COMiC_Heap
 {
     HANDLE heap_handle;
 };
 
-struct COMiC_OS_Socket
+struct COMiC_Thread
+{
+    COMiC_Application *app;
+    HANDLE thread_handle;
+};
+
+struct COMiC_Socket
 {
     SOCKET socket;
 };
 
-struct COMiC_OS_InternetAddress
+struct COMiC_InternetAddress
 {
     struct sockaddr_in address;
 };
 
-#endif /* COMiC__OS_WINDOWS_H */
+# ifdef __cplusplus
+};
+# endif
+
+#endif /* COMiC__OS_H */

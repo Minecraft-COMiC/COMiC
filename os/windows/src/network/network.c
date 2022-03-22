@@ -39,7 +39,7 @@ void COMiC_Network_Init(
 void COMiC_Network_ListenToConnections(
         COMiC_In COMiC_Network_ServerNetInfo server,
         COMiC_In COMiC_Network_ClientNetInfo *client,
-        COMiC_In void (*onPacketReceive)(COMiC_Network_ClientNetInfo *, COMiC_Network_ByteBuffer *)
+        COMiC_In void (*onPacketReceive)(COMiC_Network_ClientNetInfo *, COMiC_Network_Buffer *)
 )
 {
     // Listen to incoming connections:
@@ -66,7 +66,7 @@ void COMiC_Network_ListenToConnections(
 
         if (message_length > 0)
         {
-            COMiC_Network_ByteBuffer buf = {.bytes = bytes, .index = 0, .size = COMiC_Network_Buffer_ReadVarInt(&buf)};
+            COMiC_Network_Buffer buf = {.bytes = bytes, .index = 0, .size = COMiC_Network_Buffer_ReadVarInt(&buf)};
 
             onPacketReceive(client, &buf);
         }
@@ -85,7 +85,7 @@ void COMiC_Network_ListenToConnections(
 
 void COMiC_Network_SendPacket(
         COMiC_In COMiC_Network_ClientNetInfo *connection,
-        COMiC_In COMiC_Network_ByteBuffer *buf
+        COMiC_In COMiC_Network_Buffer *buf
 )
 {
     COMiC_Network_Buffer_Prepare(buf);

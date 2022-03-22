@@ -1,4 +1,4 @@
-#include "sender.h"
+#include <COMiC/network.h>
 
 /*
 void COMiC_Network_SendRequestEncryptionPacket(
@@ -8,7 +8,7 @@ void COMiC_Network_SendRequestEncryptionPacket(
     char nonce[4];
     RAND_bytes((unsigned char *) nonce, 4);
 
-    COMiC_Network_ByteBuffer buf = COMiC_Network_Buffer_InitWithDefaultCapacity();
+    COMiC_Network_Buffer buf = COMiC_Network_Buffer_InitWithDefaultCapacity();
 
     COMiC_Network_Buffer_WritePacketID(&buf, LOGIN_HELLO_S2C_PACKET_ID);
 
@@ -27,7 +27,7 @@ void COMiC_Network_SendLoginSuccessPacket(
     COMiC_Util_JUUID uuid = COMiC_Util_JUUID_InitRandom();
     connection->uuid = uuid;
 
-    COMiC_Network_ByteBuffer buf = COMiC_Network_Buffer_InitWithDefaultCapacity();
+    COMiC_Network_Buffer buf = COMiC_Network_Buffer_InitWithDefaultCapacity();
 
     COMiC_Network_Buffer_WritePacketID(&buf, LOGIN_SUCCESS_S2C_PACKET_ID);
 
@@ -45,7 +45,7 @@ void COMiC_Network_SendGameJoinPacket(
         COMiC_In COMiC_Network_ClientNetInfo *connection
 )
 {
-    COMiC_Network_ByteBuffer buf = COMiC_Network_Buffer_InitWithDefaultCapacity();
+    COMiC_Network_Buffer buf = COMiC_Network_Buffer_InitWithDefaultCapacity();
 
     COMiC_Network_Buffer_WritePacketID(&buf, GAME_JOIN_S2C_PACKET_ID);
 
@@ -64,7 +64,7 @@ void COMiC_Network_SendHeldItemChangePacket(
         COMiC_In COMiC_Network_ClientNetInfo *connection
 )
 {
-    COMiC_Network_ByteBuffer buf = COMiC_Network_Buffer_InitWithDefaultCapacity();
+    COMiC_Network_Buffer buf = COMiC_Network_Buffer_InitWithDefaultCapacity();
 
     COMiC_Network_Buffer_WritePacketID(&buf, HELD_ITEM_CHANGE_S2C_PACKET_ID);
 

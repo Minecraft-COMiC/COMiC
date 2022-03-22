@@ -1,11 +1,11 @@
-#include "receiver.h"
+#include "COMiC/network.h"
 
 void COMiC_Network_ReceivePacket(
         COMiC_In COMiC_Network_ClientNetInfo *connection,
-        COMiC_In COMiC_Network_ByteBuffer *buf
+        COMiC_In COMiC_Network_Buffer *buf
 )
 {
-    int packet_id = COMiC_Network_Buffer_ReadPacketID(buf);
+    COMiC_Int32 packet_id = COMiC_Network_Buffer_ReadPacketID(buf);
 
     puts("/////////////////NEW PACKET/////////////////");
     printf("Id: 0x%s%X\n", packet_id < 0x10 ? "0" : "", packet_id);
@@ -49,6 +49,6 @@ void COMiC_Network_ReceivePacket(
     }
 
     printf("Bytes = [");
-    for (int i = 0; i < buf->size; i++)
-        printf("%d%s", (unsigned char) buf->bytes[i], i != buf->size - 1 ? ", " : "]\n");
+    for (COMiC_Int32 i = 0; i < buf->size; i++)
+        printf("%d%s", (COMiC_UInt8) buf->bytes[i], i != buf->size - 1 ? ", " : "]\n");
 }

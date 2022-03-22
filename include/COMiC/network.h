@@ -1,12 +1,16 @@
 #ifndef COMIC_NETWORK_H
 #define COMIC_NETWORK_H
 
-#include "COMiC/types.h"
-#include "util.h"
-#include "os.h"
+#include <COMiC/core.h>
+#include <COMiC/util.h>
+#include <openssl/crypto.h>
 
 #define DEFAULT_SERVER_IP ("0.0.0.0")
 #define DEFAULT_SERVER_PORT (25565)
+
+# ifdef __cplusplus
+extern "C" {
+# endif
 
 typedef enum COMiC_Network_NetworkState
 {
@@ -176,22 +180,170 @@ typedef enum COMiC_Network_PacketID
 
 typedef struct COMiC_Network_ServerNetInfo
 {
-    COMiC_OS_InternetAddress address;
-    COMiC_OS_Socket socket;
+    COMiC_InternetAddress address;
+    COMiC_Socket socket;
 } COMiC_Network_ServerNetInfo;
 
 typedef struct COMiC_Network_ClientNetInfo
 {
-    COMiC_OS_InternetAddress address;
-    COMiC_OS_Socket socket;
+    COMiC_InternetAddress address;
+    COMiC_Socket socket;
     COMiC_Network_NetworkState state;
-    char *username;
+    COMiC_String username;
     COMiC_Util_JUUID uuid;
 } COMiC_Network_ClientNetInfo;
 
-#include "../src/network/packet/sender.h"
-#include "../src/network/packet/receiver.h"
-#include "../src/network/buffer.h"
+typedef struct COMiC_Network_Buffer
+{
+    COMiC_Int8 *bytes;
+    COMiC_UInt32 index;
+    COMiC_UInt32 size;
+} COMiC_Network_Buffer;
+
+COMiC_Constructor
+COMiC_Network_Buffer COMiC_Network_Buffer_Init(
+        COMiC_In COMiC_UInt32 capacity
+);
+
+COMiC_Constructor
+COMiC_Network_Buffer COMiC_Network_Buffer_InitWithDefaultCapacity(void);
+
+void COMiC_Network_Buffer_Prepare(
+        COMiC_Out COMiC_Network_Buffer *self
+);
+
+void COMiC_Network_Buffer_SkipBytes(
+        COMiC_Out COMiC_Network_Buffer *self,
+        COMiC_In COMiC_UInt32 count
+);
+
+COMiC_Int8 COMiC_Network_Buffer_ReadByte(
+        COMiC_Out COMiC_Network_Buffer *self
+);
+
+void COMiC_Network_Buffer_WriteByte(
+        COMiC_Out COMiC_Network_Buffer *self,
+        COMiC_In COMiC_Int8 byte
+);
+
+COMiC_Int32 COMiC_Network_Buffer_ReadVarInt(
+        COMiC_Out COMiC_Network_Buffer *self
+);
+
+void COMiC_Network_Buffer_WriteVarInt(
+        COMiC_Out COMiC_Network_Buffer *self,
+        COMiC_In COMiC_Int32 value
+);
+
+COMiC_Int64 COMiC_Network_Buffer_ReadVarLong(
+        COMiC_Out COMiC_Network_Buffer *self
+);
+
+void COMiC_Network_Buffer_WriteVarLong(
+        COMiC_Out COMiC_Network_Buffer *self,
+        COMiC_In COMiC_Int64 value
+);
+
+COMiC_Bool COMiC_Network_Buffer_ReadBool(
+        COMiC_Out COMiC_Network_Buffer *self
+);
+
+void COMiC_Network_Buffer_WriteBool(
+        COMiC_Out COMiC_Network_Buffer *self,
+        COMiC_In COMiC_Int32 value
+);
+
+COMiC_Int16 COMiC_Network_Buffer_ReadShort(
+        COMiC_Out COMiC_Network_Buffer *self
+);
+
+void COMiC_Network_Buffer_WriteShort(
+        COMiC_Out COMiC_Network_Buffer *self,
+        COMiC_In COMiC_Int16 value
+);
+
+COMiC_Int32 COMiC_Network_Buffer_ReadInt(
+        COMiC_Out COMiC_Network_Buffer *self
+);
+
+void COMiC_Network_Buffer_WriteInt(
+        COMiC_Out COMiC_Network_Buffer *self,
+        COMiC_In COMiC_Int32 value
+);
+
+COMiC_Int64 COMiC_Network_Buffer_ReadLong(
+        COMiC_Out COMiC_Network_Buffer *self
+);
+
+void COMiC_Network_Buffer_WriteLong(
+        COMiC_Out COMiC_Network_Buffer *self,
+        COMiC_In COMiC_Int64 value
+);
+
+COMiC_Float COMiC_Network_Buffer_ReadFloat(
+        COMiC_Out COMiC_Network_Buffer *self
+);
+
+void COMiC_Network_Buffer_WriteFloat(
+        COMiC_Out COMiC_Network_Buffer *self,
+        COMiC_In COMiC_Float value
+);
+
+COMiC_Double COMiC_Network_Buffer_ReadDouble(
+        COMiC_Out COMiC_Network_Buffer *self
+);
+
+void COMiC_Network_Buffer_WriteDouble(
+        COMiC_Out COMiC_Network_Buffer *self,
+        COMiC_In COMiC_Double value
+);
+
+void COMiC_Network_Buffer_ReadString(
+        COMiC_Out COMiC_Network_Buffer *self,
+        COMiC_Out COMiC_String out,
+        COMiC_In COMiC_UInt32 max_length
+);
+
+void COMiC_Network_Buffer_WriteString(
+        COMiC_Out COMiC_Network_Buffer *self,
+        COMiC_In COMiC_String str,
+        COMiC_In COMiC_UInt32 max_length
+);
+
+COMiC_Int32 COMiC_Network_Buffer_ReadEnum(
+        COMiC_Out COMiC_Network_Buffer *self
+);
+
+void COMiC_Network_Buffer_WriteEnum(
+        COMiC_Out COMiC_Network_Buffer *self,
+        COMiC_In COMiC_Int32 value
+);
+
+void COMiC_Network_Buffer_ReadByteArray(
+        COMiC_In COMiC_Network_Buffer *self,
+        COMiC_Out COMiC_Int8 *out,
+        COMiC_In COMiC_UInt32 count
+);
+
+void COMiC_Network_Buffer_WriteByteArray(
+        COMiC_Out COMiC_Network_Buffer *self,
+        COMiC_In COMiC_Int8 *arr,
+        COMiC_In COMiC_UInt32 count
+);
+
+void COMiC_Network_Buffer_WriteRSAKey(
+        COMiC_Out COMiC_Network_Buffer *self,
+        COMiC_In EVP_PKEY *key
+);
+
+COMiC_Int32 COMiC_Network_Buffer_ReadPacketID(
+        COMiC_In COMiC_Network_Buffer *self
+);
+
+void COMiC_Network_Buffer_WritePacketID(
+        COMiC_Out COMiC_Network_Buffer *self,
+        COMiC_In COMiC_Int32 id
+);
 
 void COMiC_Network_Init(
         COMiC_Out COMiC_Network_ServerNetInfo *server
@@ -200,16 +352,43 @@ void COMiC_Network_Init(
 void COMiC_Network_ListenToConnections(
         COMiC_In COMiC_Network_ServerNetInfo server,
         COMiC_In COMiC_Network_ClientNetInfo *client,
-        COMiC_In void (*onPacketReceive)(COMiC_Network_ClientNetInfo *, COMiC_Network_ByteBuffer *)
+        COMiC_In void (*onPacketReceive)(COMiC_Network_ClientNetInfo *, COMiC_Network_Buffer *)
 );
 
 void COMiC_Network_SendPacket(
         COMiC_In COMiC_Network_ClientNetInfo *connection,
-        COMiC_In COMiC_Network_ByteBuffer *buf
+        COMiC_In COMiC_Network_Buffer *buf
+);
+
+/*
+void COMiC_Network_SendRequestEncryptionPacket(
+        COMiC_In COMiC_Network_ClientNetInfo *connection
+);
+*/
+
+void COMiC_Network_SendLoginSuccessPacket(
+        COMiC_In COMiC_Network_ClientNetInfo *connection
+);
+
+void COMiC_Network_SendGameJoinPacket(
+        COMiC_In COMiC_Network_ClientNetInfo *connection
+);
+
+void COMiC_Network_SendHeldItemChangePacket(
+        COMiC_In COMiC_Network_ClientNetInfo *connection
+);
+
+void COMiC_Network_ReceivePacket(
+        COMiC_In COMiC_Network_ClientNetInfo *connection,
+        COMiC_In COMiC_Network_Buffer *buf
 );
 
 void COMiC_Network_Finalize(
         COMiC_In COMiC_Network_ServerNetInfo server
 );
+
+# ifdef __cplusplus
+};
+# endif
 
 #endif /* COMiC_NETWORK_H */

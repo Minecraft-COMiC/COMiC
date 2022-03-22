@@ -31,19 +31,17 @@ add_library(
 
         ./src/application.c
         ./src/error.c
-        ./src/version.cpp
+        ./src/chunk.c
+
+        ./src/validate_version.cpp
+        ./src/validate_type_sizes.cpp
 
         ./src/network/buffer.c
-        ./src/network/buffer.h
-        ./src/network/packet/receiver.c
-        ./src/network/packet/receiver.h
-        ./src/network/packet/sender.c
-        ./src/network/packet/sender.h
+        src/network/receiver.c
+        src/network/sender.c
 
-        ./src/util/juuid/juuid.c
-        ./src/util/juuid/juuid.h
-        ./src/util/rsa/rsa.c
-        ./src/util/rsa/rsa.h
+        src/util/juuid.c
+        src/util/rsa.c
 
         $<TARGET_OBJECTS:COMiC::OS>
 )

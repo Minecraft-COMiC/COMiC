@@ -2,9 +2,7 @@
 # define COMiC_TYPES_H
 
 # ifndef __cplusplus
-
 #  include <stdint.h>
-
 # else
 #  include <cstdint>
 # endif
@@ -37,6 +35,11 @@ typedef uint8_t COMiC_Byte;
 typedef uint16_t COMiC_Word;
 typedef uint32_t COMiC_DWord;
 typedef uint64_t COMiC_QWord;
+
+typedef float COMiC_Float;
+typedef double COMiC_Double;
+
+typedef char* COMiC_String;
 
 # define COMiC_Constructor
 # define COMiC_Destructor

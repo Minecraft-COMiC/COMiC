@@ -1,4 +1,8 @@
-#include "rsa.h"
+#include <COMiC.h>
+#include <openssl/bn.h>
+#include <openssl/rsa.h>
+#include <openssl/evp.h>
+#include <openssl/err.h>
 
 COMiC_Constructor
 RSA *COMiC_Util_RSA_Init(void)
