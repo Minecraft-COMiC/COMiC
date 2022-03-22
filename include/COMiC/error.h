@@ -15,6 +15,8 @@ typedef enum COMiC_ErrNo
     COMiC_ErrNo_FailedCreateHeap = 3,
     COMiC_ErrNo_FailedDestroyHeap = 4,
     COMiC_ErrNo_MemoryError = 5,
+    COMiC_ErrNo_EmptyAlloc = 6,
+    COMiC_ErrNo_FreeInvalidPointer = 7,
 } COMiC_ErrNo;
 
 void COMiC_Error_NoDealloc(void *);
@@ -34,7 +36,7 @@ void COMiC_Error_Init(
 );
 
 COMiC_Constructor
-void COMiC_Error_Set(
+COMiC_IfError COMiC_Error_Set(
         COMiC_Out COMiC_Error *self,
         COMiC_In COMiC_ErrNo err_no,
         COMiC_In COMiC_Optional(NULL) char *message,

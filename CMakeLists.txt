@@ -27,12 +27,15 @@ add_library(
         core
         STATIC
 
+        $<TARGET_OBJECTS:COMiC::OS>
+
         ./src/application.c
         ./src/error.c
-        ./src/chunk.c
+        ./src/chunk_extra_buffer.h
+        ./src/chunk_extra_buffer.c
+        ./src/chunk_extra_buffer.cpp
         ./src/validate_version.cpp
         ./src/validate_type_sizes.cpp
-        $<TARGET_OBJECTS:COMiC::OS>
 )
 
 

@@ -58,63 +58,53 @@ struct COMiC_Chunk_Pie
 
 struct COMiC_ChunkExtraBuffer_Head
 {
+    struct COMiC_ChunkExtraBuffer_Head *next;
+    struct COMiC_ChunkExtraBuffer_Buffer_Meta *owner;
+    COMiC_USize used;
+    COMiC_USize capacity;
+};
+
+struct COMiC_ChunkExtraBuffer_Page_Meta
+{
+    COMiC_USize block_size;
+    struct COMiC_ChunkExtraBuffer_Head *owner;
+    COMiC_Bool is_free;
+    struct COMiC_ChunkExtraBuffer_Page_Meta *next;
+    struct COMiC_ChunkExtraBuffer_Page_Meta *prev;
+};
+
+struct COMiC_ChunkExtraBuffer_Buffer_Meta
+{
     COMiC_USize pages_count;
     COMiC_USize free_pages_count;
-    COMiC_USize first_unused_block;
-    COMiC_USize last_unused_block;
+    struct COMiC_ChunkExtraBuffer_Page_Meta *first_free_block;
+    struct COMiC_ChunkExtraBuffer_Page_Meta *last_free_block;
+    struct COMiC_ChunkExtraBuffer_Head *buffer;
+};
+
+typedef struct COMiC_ChunkExtraBuffer
+{
     COMiC_Heap *heap;
-    COMiC_Optional(NULL) struct COMiC_ChunkExtraBuffer_Head *next;
-};
-
-union COMiC_ChunkExtraBuffer_Page
-{
-    COMiC_Byte data[16 * sizeof(COMiC_UIntPtr)];
-    struct COMiC_ChunkExtraBuffer_Page_Meta
-    {
-        COMiC_USize block_size;
-        COMiC_Optional(0) COMiC_USize next_unused_index;
-        COMiC_Optional((COMiC_USize) -1) COMiC_USize prev_unused_index;
-        COMiC_Optional((COMiC_USize) -1) COMiC_USize prev_used_index;
-    } meta;
-};
+    struct COMiC_ChunkExtraBuffer_Buffer_Meta small_pages;
+    struct COMiC_ChunkExtraBuffer_Buffer_Meta big_pages;
+} COMiC_ChunkExtraBuffer;
 
 COMiC_Constructor
-static inline void COMiC_ChunkExtraBuffer_Page_InitMeta(
-        COMiC_Out union COMiC_ChunkExtraBuffer_Page *self,
-        COMiC_In COMiC_USize sequence_size,
-        COMiC_In COMiC_Optional(0) COMiC_USize next_unused_index,
-        COMiC_In COMiC_Optional((COMiC_USize) -1) COMiC_USize prev_unused_index,
-        COMiC_In COMiC_Optional((COMiC_USize) -1) COMiC_USize prev_used_index
-)
-{
-    self->meta.block_size = sequence_size;
-    self->meta.next_unused_index = next_unused_index;
-    self->meta.prev_unused_index = prev_unused_index;
-    self->meta.prev_used_index = prev_used_index;
-}
-
-
-# define COMiC_ChunkExtraBuffer_Page_Size (sizeof(union COMiC_ChunkExtraBuffer_Page))
-
-# define COMiC_ChunkExtraBuffer_GetPage(HEAD_P, INDEX) ((union COMiC_ChunkExtraBuffer_Page *)((COMiC_UIntPtr)(HEAD_P) + sizeof(struct COMiC_ChunkExtraBuffer_Head) + COMiC_ChunkExtraBuffer_Page_Size * (INDEX)))
-
-COMiC_Constructor
-COMiC_IfError COMiC_ChunkExtraBuffer_Create(
-        COMiC_Out struct COMiC_ChunkExtraBuffer_Head **self,
+COMiC_IfError COMiC_ChunkExtraBuffer_Init(
+        COMiC_Out COMiC_ChunkExtraBuffer *self,
         COMiC_Out COMiC_Error *error,
-        COMiC_In COMiC_Heap *heap,
-        COMiC_In COMiC_USize capacity
+        COMiC_In COMiC_Heap *heap
 );
 
 COMiC_Destructor
-COMiC_IfError COMiC_ChunkExtraBuffer_Destroy(
-        COMiC_In struct COMiC_ChunkExtraBuffer_Head **self,
+COMiC_IfError COMiC_ChunkExtraBuffer_Finalize(
+        COMiC_In COMiC_ChunkExtraBuffer *self,
         COMiC_Out COMiC_Error *error,
         COMiC_In COMiC_USize capacity
 );
 
 COMiC_IfError COMiC_ChunkExtraBuffer_Push(
-        COMiC_In struct COMiC_ChunkExtraBuffer_Head **self,
+        COMiC_In COMiC_ChunkExtraBuffer *self,
         COMiC_Out COMiC_Error *error,
         COMiC_In COMiC_USize size,
         COMiC_In void *data,
@@ -122,7 +112,7 @@ COMiC_IfError COMiC_ChunkExtraBuffer_Push(
 );
 
 COMiC_IfError COMiC_ChunkExtraBuffer_Pop(
-        COMiC_In struct COMiC_ChunkExtraBuffer_Head **self,
+        COMiC_In COMiC_ChunkExtraBuffer *self,
         COMiC_Out COMiC_Error *error,
         COMiC_In void **stored
 );
@@ -134,7 +124,7 @@ typedef struct COMiC_Chunk_Head
     COMiC_Optional(NULL) struct COMiC_Chunk_Head *south;
     COMiC_Optional(NULL) struct COMiC_Chunk_Head *east;
     COMiC_UInt16 height;
-    struct COMiC_ChunkExtraBuffer_Head *buffer;
+    COMiC_ChunkExtraBuffer buffer;
 } COMiC_Chunk;
 
 # ifdef __cplusplus

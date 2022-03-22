@@ -4,7 +4,7 @@ void COMiC_Error_NoDealloc(void *_)
 {}
 
 COMiC_Constructor
-void COMiC_Error_Set(
+COMiC_IfError COMiC_Error_Set(
         COMiC_Out COMiC_Error *self,
         COMiC_In COMiC_ErrNo err_no,
         COMiC_In COMiC_Optional(NULL) char *message,
@@ -16,6 +16,7 @@ void COMiC_Error_Set(
     self->message = message;
     self->external_data = external_data;
     self->free_func = free_func;
+    return COMiC_ERROR;
 }
 
 COMiC_Constructor
