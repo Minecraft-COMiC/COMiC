@@ -2,23 +2,23 @@
 
 #include <COMiC.h>
 
-struct COMiC_SingleBuffer_Head
+struct COMiC_SingleArena_Head
 {
-    struct COMiC_SingleBuffer_Head *next;
+    struct COMiC_SingleArena_Head *next;
     COMiC_USize capacity;
     COMiC_USize used;
 };
 
-struct COMiC_SingleBuffer_PageMeta
+struct COMiC_SingleArena_PageMeta
 {
-    struct COMiC_SingleBuffer_PageMeta *next;
-    struct COMiC_SingleBuffer_Head *owner;
+    struct COMiC_SingleArena_PageMeta *next;
+    struct COMiC_SingleArena_Head *owner;
 };
 
 
 COMiC_Constructor
-COMiC_IfError COMiC_SingleBuffer_Init(
-        COMiC_Out struct COMiC_SingleBuffer *self,
+COMiC_IfError COMiC_SingleArena_Init(
+        COMiC_Out struct COMiC_SingleArena *self,
         COMiC_Out COMiC_Error *error,
         COMiC_In COMiC_Heap *heap,
         COMiC_In COMiC_USize page_size
@@ -34,13 +34,13 @@ COMiC_IfError COMiC_SingleBuffer_Init(
 }
 
 COMiC_Destructor
-COMiC_IfError COMiC_SingleBuffer_Finalize(
-        COMiC_In struct COMiC_SingleBuffer *self,
+COMiC_IfError COMiC_SingleArena_Finalize(
+        COMiC_In struct COMiC_SingleArena *self,
         COMiC_Out COMiC_Error *error
 )
 {
-    struct COMiC_SingleBuffer_Head *p = self->buffer;
-    struct COMiC_SingleBuffer_Head *next;
+    struct COMiC_SingleArena_Head *p = self->buffer;
+    struct COMiC_SingleArena_Head *next;
     while (p != NULL)
     {
         next = p->next;
@@ -59,15 +59,15 @@ COMiC_IfError COMiC_SingleBuffer_Finalize(
 }
 
 
-COMiC_IfError COMiC_SingleBuffer_Push(
-        COMiC_In struct COMiC_SingleBuffer *self,
+COMiC_IfError COMiC_SingleArena_Push(
+        COMiC_In struct COMiC_SingleArena *self,
         COMiC_Out COMiC_Error *error,
         COMiC_In void *data,
         COMiC_In COMiC_USize data_size,
         COMiC_Out void **stored
 )
 {
-    register struct COMiC_SingleBuffer_PageMeta *page;
+    register struct COMiC_SingleArena_PageMeta *page;
 
     if (data_size > self->page_size)
     {
@@ -82,9 +82,9 @@ COMiC_IfError COMiC_SingleBuffer_Push(
 
     if (self->top == NULL)
     {
-        struct COMiC_SingleBuffer_Head *new_buffer;
+        struct COMiC_SingleArena_Head *new_buffer;
         COMiC_USize new_buffer_size = self->capacity;
-        const register COMiC_USize final_page_size = sizeof(struct COMiC_SingleBuffer_PageMeta) + self->page_size;
+        const register COMiC_USize final_page_size = sizeof(struct COMiC_SingleArena_PageMeta) + self->page_size;
         if (new_buffer_size == 0)
         { new_buffer_size = 256; }
 
@@ -93,7 +93,7 @@ COMiC_IfError COMiC_SingleBuffer_Push(
                 error,
                 "Can't extend single buffer (may be not enough memory)",
                 (void **) &new_buffer,
-                sizeof(struct COMiC_SingleBuffer_Head) + final_page_size * new_buffer_size
+                sizeof(struct COMiC_SingleArena_Head) + final_page_size * new_buffer_size
         ))
         {
             return COMiC_ERROR;
@@ -106,14 +106,14 @@ COMiC_IfError COMiC_SingleBuffer_Push(
         self->capacity += new_buffer_size;
         self->free += new_buffer_size;
 
-        self->top = page = (struct COMiC_SingleBuffer_PageMeta *) (new_buffer + 1);
+        self->top = page = (struct COMiC_SingleArena_PageMeta *) (new_buffer + 1);
         do
         {
-            page->next = (struct COMiC_SingleBuffer_PageMeta *) (((COMiC_UIntPtr) page) + final_page_size);
+            page->next = (struct COMiC_SingleArena_PageMeta *) (((COMiC_UIntPtr) page) + final_page_size);
             page->owner = new_buffer;
             page = page->next;
         } while (--new_buffer_size > 0);
-        ((struct COMiC_SingleBuffer_PageMeta *) (((COMiC_UIntPtr) page) - final_page_size))->next = NULL;
+        ((struct COMiC_SingleArena_PageMeta *) (((COMiC_UIntPtr) page) - final_page_size))->next = NULL;
     }
 
     page = self->top;
@@ -126,14 +126,14 @@ COMiC_IfError COMiC_SingleBuffer_Push(
     return COMiC_SUCCESS;
 }
 
-COMiC_IfError COMiC_SingleBuffer_Pop(
-        COMiC_In struct COMiC_SingleBuffer *self,
+COMiC_IfError COMiC_SingleArena_Pop(
+        COMiC_In struct COMiC_SingleArena *self,
         COMiC_Out COMiC_Error *error,
         COMiC_In void **stored
 )
 {
-    struct COMiC_SingleBuffer_PageMeta *page;
-    page = (struct COMiC_SingleBuffer_PageMeta *) (*stored) - 1;
+    struct COMiC_SingleArena_PageMeta *page;
+    page = (struct COMiC_SingleArena_PageMeta *) (*stored) - 1;
     page->next = self->top;
     self->top = page;
     page->owner->used--;
@@ -142,14 +142,14 @@ COMiC_IfError COMiC_SingleBuffer_Pop(
 }
 
 
-COMiC_IfError COMiC_SingleBuffer_Clear(
-        COMiC_In struct COMiC_SingleBuffer *self,
+COMiC_IfError COMiC_SingleArena_Clear(
+        COMiC_In struct COMiC_SingleArena *self,
         COMiC_Out COMiC_Error *error
 )
 {
-    struct COMiC_SingleBuffer_Head *p = self->buffer;
-    struct COMiC_SingleBuffer_Head **prev = (struct COMiC_SingleBuffer_Head **) &(self->buffer);
-    struct COMiC_SingleBuffer_Head *next;
+    struct COMiC_SingleArena_Head *p = self->buffer;
+    struct COMiC_SingleArena_Head **prev = (struct COMiC_SingleArena_Head **) &(self->buffer);
+    struct COMiC_SingleArena_Head *next;
 
     while (p != NULL)
     {

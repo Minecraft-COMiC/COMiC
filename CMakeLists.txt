@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.00)
 project(COMiC C CXX)
 
 set(CMAKE_C_STANDARD 99)
@@ -32,9 +32,12 @@ add_library(
         ./src/application.c
         ./src/error.c
         ./src/single_buffer.c
-#        ./src/chunk_extra_buffer.h
-#        ./src/chunk_extra_buffer.c
-#        ./src/chunk_extra_buffer.cpp
+        ./src/global_heap.c
+        ./src/rb_tree.c
+        ./src/rb_tree_pointers.cpp
+        # ./src/chunk_extra_buffer.h
+        # ./src/chunk_extra_buffer.c
+        # ./src/chunk_extra_buffer.cpp
         ./src/validate_version.cpp
         ./src/validate_type_sizes.cpp
 )
@@ -60,7 +63,7 @@ install(
 
 add_executable(
         run
-        run.c
+        run.cpp
 )
 
-target_link_libraries(run COMiC::Core)
+target_link_libraries(run COMiC::Headers)

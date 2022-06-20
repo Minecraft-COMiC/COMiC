@@ -7,7 +7,7 @@ COMiC_Constructor
 COMiC_IfError COMiC_Thread_WrapCurrent(
         COMiC_Out COMiC_Thread *self,
         COMiC_Out COMiC_Error *error,
-        COMiC_In COMiC_Application *owner
+        COMiC_In COMiC_BaseApplication *owner
 )
 {
     self->app = owner;

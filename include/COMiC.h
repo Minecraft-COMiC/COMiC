@@ -3,6 +3,6 @@
 
 # include <COMiC/version.h>
 # include <COMiC/core.h>
-# include <COMiC/world.h>
+# include <COMiC/rb_tree.h>
 
 #endif /* COMiC_H */

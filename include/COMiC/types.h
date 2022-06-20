@@ -38,6 +38,13 @@ typedef uint16_t COMiC_Word;
 typedef uint32_t COMiC_DWord;
 typedef uint64_t COMiC_QWord;
 
+typedef enum COMiC_ComparisonResult
+{
+    COMiC_LESS = -1,
+    COMiC_EQUALS = 0,
+    COMiC_GREATER = 1,
+} COMiC_ComparisonResult;
+
 # define COMiC_Constructor
 # define COMiC_Destructor
 

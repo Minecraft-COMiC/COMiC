@@ -14,7 +14,7 @@ struct COMiC_Heap
 
 struct COMiC_Thread
 {
-    COMiC_Application *app;
+    COMiC_BaseApplication *app;
     HANDLE thread_handle;
 };
 
