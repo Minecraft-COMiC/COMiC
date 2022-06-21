@@ -1,4 +1,4 @@
-#include <COMiC.h>
+#include <COMiC/core.h>
 
 #define COMiC_RedBlackTree_GetVertexValue(VERTEX) ((void *)(((COMiC_UIntPtr)(VERTEX)) + sizeof(struct COMiC_RedBlackTree_Node)))
 

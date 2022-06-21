@@ -1,2 +1,2 @@
 #include <COMiC.h>
-#include <COMiC/rb_tree.hpp>
+#include "COMiC/core/rb_tree.hpp"

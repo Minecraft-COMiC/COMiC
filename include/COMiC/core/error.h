@@ -1,7 +1,7 @@
-#ifndef COMiC_ERROR_H
-# define COMiC_ERROR_H
+#ifndef COMiC_Core_ERROR_H
+# define COMiC_Core_ERROR_H
 
-# include <COMiC/types.h>
+# include "types.h"
 
 # ifdef __cplusplus
 extern "C" {
@@ -28,22 +28,37 @@ typedef struct COMiC_Error
     COMiC_Optional(NULL) char *message;
     COMiC_Optional(NULL) void *external_data;
 
-    COMiC_Optional(COMiC_Error_NoDealloc) void (*free_func)(void *);
+    COMiC_Optional(COMiC_Error_NoDealloc)
+
+    void (*free_func)(void *);
 } COMiC_Error;
 
 COMiC_Constructor
-void COMiC_Error_Init(
+static constexpr inline void COMiC_Error_Init(
         COMiC_Out COMiC_Error *self
-);
+) noexcept
+{
+    self->err_no = COMiC_ErrNo_NoError;
+    self->message = NULL;
+    self->external_data = NULL;
+    self->free_func = COMiC_Error_NoDealloc;
+}
 
 COMiC_Constructor
-COMiC_IfError COMiC_Error_Set(
+static constexpr inline COMiC_IfError COMiC_Error_Set(
         COMiC_Out COMiC_Error *self,
         COMiC_In COMiC_ErrNo err_no,
         COMiC_In COMiC_Optional(NULL) char *message,
         COMiC_In COMiC_Optional(NULL) void *external_data,
         COMiC_In COMiC_Optional(COMiC_Error_NoDealloc) void (*free_func)(void *)
-);
+) noexcept
+{
+    self->err_no = err_no;
+    self->message = message;
+    self->external_data = external_data;
+    self->free_func = free_func;
+    return COMiC_ERROR;
+}
 
 COMiC_Destructor
 void COMiC_Error_Release(
@@ -52,7 +67,7 @@ void COMiC_Error_Release(
 
 COMiC_Destructor COMiC_Constructor
 static inline void COMiC_Error_Clear(
-        COMiC_In COMiC_Out COMiC_Error *self
+        COMiC_In COMiC_Error *self
 )
 {
     COMiC_Error_Release(self);
@@ -64,4 +79,4 @@ static inline void COMiC_Error_Clear(
 };
 #endif
 
-#endif /* COMiC_ERROR_H */
+#endif /* COMiC_Core_ERROR_H */

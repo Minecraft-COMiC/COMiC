@@ -1,8 +1,8 @@
-#ifndef COMiC_RB_TREE_H
-# define COMiC_RB_TREE_H
+#ifndef COMiC_Core_RB_TREE_H
+# define COMiC_Core_RB_TREE_H
 
-# include <COMiC/types.h>
-# include <COMiC/error.h>
+# include "COMiC/core/types.h"
+# include "error.h"
 
 # ifdef __cplusplus
 extern "C" {
@@ -27,15 +27,18 @@ typedef struct COMiC_RedBlackTree
     struct COMiC_RedBlackTree_Node *root;
 } COMiC_RedBlackTree;
 
-static inline COMiC_IfError COMiC_RedBlackTree_Init(
+static constexpr inline COMiC_IfError COMiC_RedBlackTree_Init(
         COMiC_Out COMiC_RedBlackTree *self,
         COMiC_Out COMiC_Error *error
-)
-{ self->root = NULL; }
+) noexcept
+{
+    self->root = NULL;
+    return COMiC_SUCCESS;
+}
 
-static inline COMiC_Bool COMiC_RedBlackTree_IsEmpty(
+static constexpr inline COMiC_Bool COMiC_RedBlackTree_IsEmpty(
         COMiC_In COMiC_RedBlackTree *self
-)
+) noexcept
 { return self->root == NULL; }
 
 
@@ -43,4 +46,4 @@ static inline COMiC_Bool COMiC_RedBlackTree_IsEmpty(
 };
 #endif
 
-#endif /* COMiC_RB_TREE_H */
+#endif /* COMiC_Core_RB_TREE_H */

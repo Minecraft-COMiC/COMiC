@@ -1,12 +1,14 @@
-#ifndef COMiC_TYPES_H
-# define COMiC_TYPES_H
+#ifndef COMiC_Core_TYPES_H
+# define COMiC_Core_TYPES_H
 
 # ifndef __cplusplus
-
 #  include <stdint.h>
-
+#  define constexpr
+#  define noexcept
 # else
 #  include <cstdint>
+#  define constexpr constexpr
+#  define noexcept noexcept
 # endif
 
 # ifndef __cplusplus
@@ -53,4 +55,4 @@ typedef enum COMiC_ComparisonResult
 # define COMiC_In
 # define COMiC_Out
 
-#endif /* COMiC_TYPES_H */
+#endif /* COMiC_Core_TYPES_H */

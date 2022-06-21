@@ -1,6 +1,6 @@
 #include <windows.h>
 
-#include <COMiC.h>
+#include <COMiC/core.h>
 
 #include "error.h"
 

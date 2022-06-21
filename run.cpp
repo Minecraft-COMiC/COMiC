@@ -1,5 +1,5 @@
 //#include <COMiC/rb_tree.hpp>
-#include "include/COMiC/rb_tree.hpp"
+#include <COMiC/core.hpp>
 
 int main()
 {

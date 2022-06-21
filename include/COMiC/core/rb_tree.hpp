@@ -1,10 +1,10 @@
-#ifndef COMiC_RB_TREE_HPP
-# define COMiC_RB_TREE_HPP
+#ifndef COMiC_Core_RB_TREE_HPP
+# define COMiC_Core_RB_TREE_HPP
 
 #include <cstddef>
-#include <COMiC/types.h>
-#include <COMiC/error.h>
-#include <COMiC/rb_tree.h>
+#include "COMiC/core/types.h"
+#include "error.h"
+#include "rb_tree.h"
 
 namespace _COMiC_RedBlackTree
 {
@@ -374,4 +374,4 @@ namespace _COMiC_RedBlackTree
     }
 }
 
-#endif /* COMiC_RB_TREE_HPP */
+#endif /* COMiC_Core_RB_TREE_HPP */

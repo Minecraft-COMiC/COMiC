@@ -29,17 +29,17 @@ add_library(
 
         $<TARGET_OBJECTS:COMiC::OS>
 
-        ./src/application.c
+        # ./src/application.c
         ./src/error.c
-        ./src/single_buffer.c
-        ./src/global_heap.c
-        ./src/rb_tree.c
-        ./src/rb_tree_pointers.cpp
+        # ./src/single_buffer.c
+        # ./src/global_heap.c
+        # ./src/rb_tree.c
+        # ./src/rb_tree_pointers.cpp
         # ./src/chunk_extra_buffer.h
         # ./src/chunk_extra_buffer.c
         # ./src/chunk_extra_buffer.cpp
-        ./src/validate_version.cpp
-        ./src/validate_type_sizes.cpp
+        # ./src/validate_version.cpp
+        # ./src/validate_type_sizes.cpp
 )
 
 

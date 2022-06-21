@@ -4,9 +4,8 @@ add_library(
 
         ./src/error.h
         ./src/error.c
-        ./src/heap.c
-        ./src/mem.c
-        ./src/thread.c
+        # ./src/mem.c
+        # ./src/thread.c
 )
 
 target_link_libraries(__COMiC_OS_Windows PUBLIC COMiC::Headers)

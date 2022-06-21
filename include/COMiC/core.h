@@ -9,17 +9,9 @@ extern "C" {
 };
 # endif
 
-# include <COMiC/types.h>
-# include <COMiC/error.h>
-# include <COMiC/os.h>
-
-
-# ifdef __cplusplus
-extern "C" {
-# endif
-
-# ifdef __cplusplus
-};
-# endif
+# include "core/types.h"
+# include "core/error.h"
+# include "core/os.h"
+# include "core/rb_tree.h"
 
 #endif /* COMiC_CORE_H */
