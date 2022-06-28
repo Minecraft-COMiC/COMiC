@@ -193,8 +193,12 @@ namespace _COMiC_RedBlackTree
         { grandchild.set_parent(node); }
     }
 
-    template<class node_wrapper_t>
+    template<
+            class node_wrapper_t,
+            class as_parent_wrapper_t
+    >
     static inline constexpr void _LinkInsteadOf(
+            COMiC_In as_parent_wrapper_t parent,
             COMiC_Out node_wrapper_t self,
             COMiC_In node_wrapper_t destination
     )
@@ -202,15 +206,10 @@ namespace _COMiC_RedBlackTree
         if (self == destination)
         { return; }
 
-        node_wrapper_t temp(destination.get_parent());
+        parent.set_child(self);
+        self.set_parent(parent.real());
 
-        self.set_parent(temp);
-        if (temp.get_left() == self)
-        { temp.set_left(self); }
-        else
-        { temp.set_right(self); }
-
-        temp = destination.get_left();
+        node_wrapper_t temp = destination.get_left();
         self.set_left(temp);
         if (temp != nullptr)
         { temp.set_parent(self); }
@@ -227,10 +226,42 @@ namespace _COMiC_RedBlackTree
         destination.set_right(nullptr);
     }
 
+    namespace _Actions
+    {
+        class Add_CN
+        {
+        public:
+            template<
+                    class node_wrapper_t,
+                    class as_parent_wrapper_t
+            >
+            static constexpr inline void empty(as_parent_wrapper_t parent, node_wrapper_t node)
+            {
+                parent.set_child(node);
+                node.set_parent(parent.real());
+                node.set_left(nullptr);
+                node.set_right(nullptr);
+            }
+
+            template<
+                    class node_wrapper_t,
+                    class as_parent_wrapper_t
+            >
+            static constexpr inline void replace(as_parent_wrapper_t parent, node_wrapper_t node, node_wrapper_t old)
+            {
+                _LinkInsteadOf(parent, node, old);
+            }
+        };
+    }
+
+
     template<
-            bool override,
+            class action_t,
             class node_wrapper_t,
-            class tree_wrapper_t = _COMiC_RedBlackTree::DefaultTree_Wrapper<node_wrapper_t>
+            class tree_wrapper_t = _COMiC_RedBlackTree::DefaultTree_Wrapper<node_wrapper_t>,
+            class as_parent_wrapper_left_t = _COMiC_RedBlackTree::_AsParent_Wrapper::NodeLeft_CN<node_wrapper_t>,
+            class as_parent_wrapper_right_t = _COMiC_RedBlackTree::_AsParent_Wrapper::NodeRight_CN<node_wrapper_t>,
+            class as_parent_wrapper_root_t = _COMiC_RedBlackTree::_AsParent_Wrapper::Root_CN<tree_wrapper_t, node_wrapper_t>
     >
     static inline COMiC_IfError _FindNode(
             COMiC_Out COMiC_Error *error,
@@ -240,67 +271,125 @@ namespace _COMiC_RedBlackTree
     )
     {
         node_wrapper_t pointer = tree.get_root();
-        COMiC_ComparisonResult last_comparison_result;
+        COMiC_ComparisonResult comparsion_result;
 
-        *parent = node_wrapper_t(nullptr);
 
         if (pointer == nullptr)
         {
-            if constexpr(override)
-            { tree.set_root(*node); }
+            action_t::empty(as_parent_wrapper_root_t(tree), *node);
             *node = node_wrapper_t(nullptr);
+            *parent = node_wrapper_t(nullptr);
             return COMiC_SUCCESS;
         }
 
-        LOOP:
+        {
+            *parent = pointer;
+            if (node->compare_to(error, pointer, &comparsion_result))
+            { return COMiC_ERROR; }
+
+            if (comparsion_result < 0)
+            {
+                pointer = pointer.get_left();
+                if (pointer == nullptr)
+                {
+                    action_t::empty(as_parent_wrapper_left_t(*parent), *node);
+                    *node = node_wrapper_t(nullptr);
+                    return COMiC_SUCCESS;
+                }
+                goto LOOP_LEFT;
+            }
+            else if (comparsion_result > 0)
+            {
+                pointer = pointer.get_right();
+                if (pointer == nullptr)
+                {
+                    action_t::empty(as_parent_wrapper_right_t(*parent), *node);
+                    *node = node_wrapper_t(nullptr);
+                    return COMiC_SUCCESS;
+                }
+                goto LOOP_RIGHT;
+            }
+            else
+            {
+                action_t::replace(as_parent_wrapper_root_t(tree), *node, pointer);
+                *node = pointer;
+                return COMiC_SUCCESS;
+            }
+        }
+
+        LOOP_LEFT:
         {
             *parent = pointer;
 
-            if (pointer.compare_to(error, *node, &last_comparison_result))
+            if (node->compare_to(error, pointer, &comparsion_result))
             { return COMiC_ERROR; }
 
-            switch (last_comparison_result)
+            if (comparsion_result < 0)
             {
-                case COMiC_LESS:
-                    pointer = pointer.get_left();
-                    if (pointer == nullptr)
-                    {
-                        if constexpr (override)
-                        {
-                            parent->set_left(*node);
-                            node->set_parent(*parent);
-                            node->set_left(nullptr);
-                            node->set_right(nullptr);
-                        }
-                        *node = node_wrapper_t(nullptr);
-                        return COMiC_SUCCESS;
-                    }
-                    goto LOOP;
-                case COMiC_EQUALS:
-                    if constexpr (override)
-                    { _COMiC_RedBlackTree::_LinkInsteadOf(*node, pointer); }
-                    *node = pointer;
+                pointer = pointer.get_left();
+                if (pointer == nullptr)
+                {
+                    action_t::empty(as_parent_wrapper_left_t(*parent), *node);
+                    *node = node_wrapper_t(nullptr);
                     return COMiC_SUCCESS;
-                case COMiC_GREATER:
-                    pointer = pointer.get_right();
-                    if (pointer == nullptr)
-                    {
-                        if constexpr (override)
-                        {
-                            parent->set_right(*node);
-                            node->set_parent(*parent);
-                            node->set_left(nullptr);
-                            node->set_right(nullptr);
-                        }
-                        *node = node_wrapper_t(nullptr);
-                        return COMiC_SUCCESS;
-                    }
-                    goto LOOP;
+                }
+                goto LOOP_LEFT;
+            }
+            else if (comparsion_result > 0)
+            {
+                pointer = pointer.get_right();
+                if (pointer == nullptr)
+                {
+                    action_t::empty(as_parent_wrapper_right_t(*parent), *node);
+                    *node = node_wrapper_t(nullptr);
+                    return COMiC_SUCCESS;
+                }
+                goto LOOP_RIGHT;
+            }
+            else
+            {
+                action_t::replace(as_parent_wrapper_left_t(*parent), *node, pointer);
+                *node = pointer;
+                return COMiC_SUCCESS;
             }
         }
-        // todo
 
-        return COMiC_ERROR;
+        LOOP_RIGHT:
+        {
+            *parent = pointer;
+
+            if (node->compare_to(error, pointer, &comparsion_result))
+            { return COMiC_ERROR; }
+
+            if (comparsion_result < 0)
+            {
+                pointer = pointer.get_left();
+                if (pointer == nullptr)
+                {
+                    action_t::empty(as_parent_wrapper_left_t(*parent), *node);
+                    *node = node_wrapper_t(nullptr);
+                    return COMiC_SUCCESS;
+                }
+                goto LOOP_LEFT;
+            }
+            else if (comparsion_result > 0)
+            {
+                pointer = pointer.get_right();
+                if (pointer == nullptr)
+                {
+                    action_t::empty(as_parent_wrapper_right_t(*parent), *node);
+                    *node = node_wrapper_t(nullptr);
+                    return COMiC_SUCCESS;
+                }
+                goto LOOP_RIGHT;
+            }
+            else
+            {
+                action_t::replace(as_parent_wrapper_right_t(*parent), *node, pointer);
+                *node = pointer;
+                return COMiC_SUCCESS;
+            }
+        }
     }
 
     /* https://en.wikipedia.org/wiki/Red%E2%80%93black_tree#Insertion */
@@ -323,7 +412,7 @@ namespace _COMiC_RedBlackTree
         node_wrapper_t uncle(nullptr);
         node_wrapper_t grandparent(nullptr);
 
-        if (_COMiC_RedBlackTree::_FindNode<true, node_wrapper_t, tree_wrapper_t>(error, self, &node, &parent))
+        if (_COMiC_RedBlackTree::_FindNode<_Actions::Add_CN, node_wrapper_t, tree_wrapper_t, as_parent_wrapper_left_t, as_parent_wrapper_right_t, as_parent_wrapper_root_t>(error, self, &node, &parent))
         { return COMiC_ERROR; }
 
         if (parent == nullptr || node != nullptr)
@@ -407,6 +496,31 @@ namespace _COMiC_RedBlackTree
         /* https://en.wikipedia.org/wiki/Red%E2%80%93black_tree#Insert_case_3 */
         return COMiC_SUCCESS;
     }
-}
 
+
+    template<
+            class node_wrapper_t,
+            class tree_wrapper_t =_COMiC_RedBlackTree::DefaultTree_Wrapper<node_wrapper_t>,
+            typename raw_node_t = COMiC_RedBlackTree_Node *,
+            class as_parent_wrapper_left_t = _COMiC_RedBlackTree::_AsParent_Wrapper::NodeLeft_CN<node_wrapper_t>,
+            class as_parent_wrapper_right_t = _COMiC_RedBlackTree::_AsParent_Wrapper::NodeRight_CN<node_wrapper_t>,
+            class as_parent_wrapper_root_t = _COMiC_RedBlackTree::_AsParent_Wrapper::Root_CN<tree_wrapper_t, node_wrapper_t>
+    >
+    static inline COMiC_IfError UnLink(
+            COMiC_In tree_wrapper_t self,
+            COMiC_Out COMiC_Error *const error,
+            COMiC_In COMiC_Out raw_node_t cell
+    )
+    {
+        node_wrapper_t node = node_wrapper_t(*cell);
+        node_wrapper_t parent(nullptr);
+        node_wrapper_t uncle(nullptr);
+        node_wrapper_t grandparent(nullptr);
+
+        if (_COMiC_RedBlackTree::_FindNode<_Actions::Add_CN, node_wrapper_t, tree_wrapper_t>(error, self, &node, &parent))
+        { return COMiC_ERROR; }
+
+
+    } // end of RBdelete2
+}
 #endif /* COMiC_Core_RB_TREE_HPP */
