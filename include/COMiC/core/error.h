@@ -20,17 +20,19 @@ typedef enum COMiC_ErrNo
     COMiC_ErrNo_Overflow = 8,
 } COMiC_ErrNo;
 
-void COMiC_Error_NoDealloc(void *);
-
 typedef struct COMiC_Error
 {
     COMiC_ErrNo err_no;
     COMiC_Optional(NULL) char *message;
     COMiC_Optional(NULL) void *external_data;
 
-    COMiC_Optional(COMiC_Error_NoDealloc)
+    struct
+    {
+        COMiC_Optional(COMiC_FALSE) COMiC_Bool is_message_on_heap;
+        COMiC_Optional(NULL)
 
-    void (*free_func)(void *);
+        void (*external_data_finalizer)(void *);
+    } dealloc_info;
 } COMiC_Error;
 
 COMiC_Constructor
@@ -41,7 +43,8 @@ static constexpr inline void COMiC_Error_Init(
     self->err_no = COMiC_ErrNo_NoError;
     self->message = NULL;
     self->external_data = NULL;
-    self->free_func = COMiC_Error_NoDealloc;
+    self->dealloc_info.is_message_on_heap = COMiC_FALSE;
+    self->dealloc_info.external_data_finalizer = NULL;
 }
 
 COMiC_Constructor
@@ -50,13 +53,15 @@ static constexpr inline COMiC_IfError COMiC_Error_Set(
         COMiC_In COMiC_ErrNo err_no,
         COMiC_In COMiC_Optional(NULL) char *message,
         COMiC_In COMiC_Optional(NULL) void *external_data,
-        COMiC_In COMiC_Optional(COMiC_Error_NoDealloc) void (*free_func)(void *)
+        COMiC_Optional(COMiC_FALSE) COMiC_Bool is_message_on_heap,
+        COMiC_Optional(NULL) void (*external_data_finalizer)(void *)
 ) noexcept
 {
     self->err_no = err_no;
     self->message = message;
     self->external_data = external_data;
-    self->free_func = free_func;
+    self->dealloc_info.is_message_on_heap = is_message_on_heap;
+    self->dealloc_info.external_data_finalizer = external_data_finalizer;
     return COMiC_ERROR;
 }
 
@@ -68,7 +73,7 @@ void COMiC_Error_Release(
 COMiC_Destructor COMiC_Constructor
 static inline void COMiC_Error_Clear(
         COMiC_In COMiC_Error *self
-)
+) noexcept
 {
     COMiC_Error_Release(self);
     COMiC_Error_Init(self);

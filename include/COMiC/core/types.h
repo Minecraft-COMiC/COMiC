@@ -3,12 +3,13 @@
 
 # ifndef __cplusplus
 #  include <stdint.h>
-#  define constexpr
-#  define noexcept
 # else
 #  include <cstdint>
-#  define constexpr constexpr
-#  define noexcept noexcept
+# endif
+
+# ifndef __cplusplus
+#  define constexpr
+#  define noexcept
 # endif
 
 # ifndef __cplusplus

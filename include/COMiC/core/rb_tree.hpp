@@ -227,6 +227,82 @@ namespace _COMiC_RedBlackTree
         destination.set_right(nullptr);
     }
 
+    template<
+            bool override,
+            class node_wrapper_t,
+            class tree_wrapper_t = _COMiC_RedBlackTree::DefaultTree_Wrapper<node_wrapper_t>
+    >
+    static inline COMiC_IfError _FindNode(
+            COMiC_Out COMiC_Error *error,
+            COMiC_In tree_wrapper_t tree,
+            COMiC_In COMiC_Out node_wrapper_t *node,
+            COMiC_Out node_wrapper_t *parent
+    )
+    {
+        node_wrapper_t pointer = tree.get_root();
+        COMiC_ComparisonResult last_comparison_result;
+
+        *parent = node_wrapper_t(nullptr);
+
+        if (pointer == nullptr)
+        {
+            if constexpr(override)
+            { tree.set_root(*node); }
+            *node = node_wrapper_t(nullptr);
+            return COMiC_SUCCESS;
+        }
+
+        LOOP:
+        {
+            *parent = pointer;
+
+            if (pointer.compare_to(error, *node, &last_comparison_result))
+            { return COMiC_ERROR; }
+
+            switch (last_comparison_result)
+            {
+                case COMiC_LESS:
+                    pointer = pointer.get_left();
+                    if (pointer == nullptr)
+                    {
+                        if constexpr (override)
+                        {
+                            parent->set_left(*node);
+                            node->set_parent(*parent);
+                            node->set_left(nullptr);
+                            node->set_right(nullptr);
+                        }
+                        *node = node_wrapper_t(nullptr);
+                        return COMiC_SUCCESS;
+                    }
+                    goto LOOP;
+                case COMiC_EQUALS:
+                    if constexpr (override)
+                    { _COMiC_RedBlackTree::_LinkInsteadOf(*node, pointer); }
+                    *node = pointer;
+                    return COMiC_SUCCESS;
+                case COMiC_GREATER:
+                    pointer = pointer.get_right();
+                    if (pointer == nullptr)
+                    {
+                        if constexpr (override)
+                        {
+                            parent->set_right(*node);
+                            node->set_parent(*parent);
+                            node->set_left(nullptr);
+                            node->set_right(nullptr);
+                        }
+                        *node = node_wrapper_t(nullptr);
+                        return COMiC_SUCCESS;
+                    }
+                    goto LOOP;
+            }
+        }
+        // todo
+
+        return COMiC_ERROR;
+    }
+
     /* https://en.wikipedia.org/wiki/Red%E2%80%93black_tree#Insertion */
     template<
             class node_wrapper_t,
@@ -246,65 +322,25 @@ namespace _COMiC_RedBlackTree
         node_wrapper_t parent(nullptr);
         node_wrapper_t uncle(nullptr);
         node_wrapper_t grandparent(nullptr);
-        COMiC_ComparisonResult last_comparison_result;
 
-        *cell = nullptr;
+        if (_COMiC_RedBlackTree::_FindNode<true, node_wrapper_t, tree_wrapper_t>(error, self, &node, &parent))
+        { return COMiC_ERROR; }
 
-        node.set_parent(NULL);
-        node.set_left(NULL);
-        node.set_right(NULL);
-
-        grandparent = self.get_root();
-        if (grandparent == nullptr)
+        if (parent == nullptr || node != nullptr)
         {
-            self.set_root(node);
+            *cell = node.raw();
             return COMiC_SUCCESS;
         }
 
+        node = node_wrapper_t(*cell);
+
         node.set_color(COMiC_RedBlackTree_RED);
-
-        while (grandparent != nullptr)
-        {
-            parent = grandparent;
-            if (node.compare_to(error, grandparent, &last_comparison_result))
-            {}
-
-            switch (last_comparison_result)
-            {
-                case COMiC_LESS:
-                    grandparent = grandparent.get_left();
-                    break;
-                case COMiC_EQUALS:
-                    _COMiC_RedBlackTree::_LinkInsteadOf(node, grandparent);
-                    *cell = grandparent.raw();
-                    return COMiC_SUCCESS;
-                case COMiC_GREATER:
-                    grandparent = grandparent.get_right();
-                    break;
-            }
-        }
-
-        switch (last_comparison_result)
-        {
-            case COMiC_LESS:
-                parent.set_left(node);
-                break;
-            case COMiC_EQUALS:
-                /* todo */
-                return COMiC_ERROR;
-            case COMiC_GREATER:
-                parent.set_right(node);
-                break;
-        }
-        node.set_parent(parent);
 
         do
         {
             /* https://en.wikipedia.org/wiki/Red%E2%80%93black_tree#Insert_case_1 */
             if (parent.get_color() == COMiC_RedBlackTree_BLACK)
-            {
-                return COMiC_SUCCESS;
-            }
+            { return COMiC_SUCCESS; }
             if ((grandparent = parent.get_parent()) == nullptr)
             {
                 /* https://en.wikipedia.org/wiki/Red%E2%80%93black_tree#Insert_case_4 */
@@ -317,7 +353,48 @@ namespace _COMiC_RedBlackTree
             { uncle = grandparent.get_right(); }
 
             if (uncle == nullptr || uncle.get_color() == COMiC_RedBlackTree_BLACK)
-            { goto POST; }
+            {
+                /* https://en.wikipedia.org/wiki/Red%E2%80%93black_tree#Insert_case_5 */
+                if (parent == grandparent.get_left())
+                {
+                    if (node == parent.get_right())
+                    {
+                        _COMiC_RedBlackTree::_COMiC_RedBlackTree_RotateLeft(as_parent_wrapper_left_t(grandparent), parent, node);
+                    }
+                    else
+                    { node = parent; }
+                    parent = grandparent;
+
+                    grandparent = parent.get_parent();
+                    if (grandparent == nullptr)
+                    { _COMiC_RedBlackTree::_COMiC_RedBlackTree_RotateRight(as_parent_wrapper_root_t(self), parent, node); }
+                    else if (grandparent.get_left() == parent)
+                    { _COMiC_RedBlackTree::_COMiC_RedBlackTree_RotateRight(as_parent_wrapper_left_t(grandparent), parent, node); }
+                    else
+                    { _COMiC_RedBlackTree::_COMiC_RedBlackTree_RotateRight(as_parent_wrapper_right_t(grandparent), parent, node); }
+                }
+                else
+                {
+                    if (node == parent.get_left())
+                    {
+                        _COMiC_RedBlackTree::_COMiC_RedBlackTree_RotateRight(as_parent_wrapper_right_t(grandparent), parent, node);
+                    }
+                    else
+                    { node = parent; }
+                    parent = grandparent;
+
+                    grandparent = parent.get_parent();
+                    if (grandparent == nullptr)
+                    { _COMiC_RedBlackTree::_COMiC_RedBlackTree_RotateLeft(as_parent_wrapper_root_t(self), parent, node); }
+                    else if (grandparent.get_left() == parent)
+                    { _COMiC_RedBlackTree::_COMiC_RedBlackTree_RotateLeft(as_parent_wrapper_left_t(grandparent), parent, node); }
+                    else
+                    { _COMiC_RedBlackTree::_COMiC_RedBlackTree_RotateLeft(as_parent_wrapper_right_t(grandparent), parent, node); }
+                }
+                node.set_color(COMiC_RedBlackTree_BLACK);
+                parent.set_color(COMiC_RedBlackTree_RED);
+                return COMiC_SUCCESS;
+            }
 
             /* https://en.wikipedia.org/wiki/Red%E2%80%93black_tree#Insert_case_2 */
             parent.set_color(COMiC_RedBlackTree_BLACK);
@@ -328,48 +405,6 @@ namespace _COMiC_RedBlackTree
         } while ((parent = node.get_parent()) != nullptr);
 
         /* https://en.wikipedia.org/wiki/Red%E2%80%93black_tree#Insert_case_3 */
-        return COMiC_SUCCESS;
-
-        POST:
-        /* https://en.wikipedia.org/wiki/Red%E2%80%93black_tree#Insert_case_5 */
-        if (parent == grandparent.get_left())
-        {
-            if (node == parent.get_right())
-            {
-                _COMiC_RedBlackTree::_COMiC_RedBlackTree_RotateLeft(as_parent_wrapper_left_t(grandparent), parent, node);
-            }
-            else
-            { node = parent; }
-            parent = grandparent;
-
-            grandparent = parent.get_parent();
-            if (grandparent == nullptr)
-            { _COMiC_RedBlackTree::_COMiC_RedBlackTree_RotateRight(as_parent_wrapper_root_t(self), parent, node); }
-            else if (grandparent.get_left() == parent)
-            { _COMiC_RedBlackTree::_COMiC_RedBlackTree_RotateRight(as_parent_wrapper_left_t(grandparent), parent, node); }
-            else
-            { _COMiC_RedBlackTree::_COMiC_RedBlackTree_RotateRight(as_parent_wrapper_right_t(grandparent), parent, node); }
-        }
-        else
-        {
-            if (node == parent.get_left())
-            {
-                _COMiC_RedBlackTree::_COMiC_RedBlackTree_RotateRight(as_parent_wrapper_right_t(grandparent), parent, node);
-            }
-            else
-            { node = parent; }
-            parent = grandparent;
-
-            grandparent = parent.get_parent();
-            if (grandparent == nullptr)
-            { _COMiC_RedBlackTree::_COMiC_RedBlackTree_RotateLeft(as_parent_wrapper_root_t(self), parent, node); }
-            else if (grandparent.get_left() == parent)
-            { _COMiC_RedBlackTree::_COMiC_RedBlackTree_RotateLeft(as_parent_wrapper_left_t(grandparent), parent, node); }
-            else
-            { _COMiC_RedBlackTree::_COMiC_RedBlackTree_RotateLeft(as_parent_wrapper_right_t(grandparent), parent, node); }
-        }
-        node.set_color(COMiC_RedBlackTree_BLACK);
-        parent.set_color(COMiC_RedBlackTree_RED);
         return COMiC_SUCCESS;
     }
 }
