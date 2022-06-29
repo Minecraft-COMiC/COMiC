@@ -228,7 +228,7 @@ namespace _COMiC_RedBlackTree
 
     namespace _Actions
     {
-        class Add_CN
+        class Link_CN
         {
         public:
             template<
@@ -252,144 +252,149 @@ namespace _COMiC_RedBlackTree
                 _LinkInsteadOf(parent, node, old);
             }
         };
+
+        class UnLink_CN
+        {
+        public:
+            template<
+                    class node_wrapper_t,
+                    class as_parent_wrapper_t
+            >
+            static constexpr inline void empty(as_parent_wrapper_t parent, node_wrapper_t node)
+            {}
+
+            template<
+                    class node_wrapper_t,
+                    class as_parent_wrapper_t
+            >
+            static constexpr inline void replace(as_parent_wrapper_t parent, node_wrapper_t node, node_wrapper_t old)
+            {
+                node_wrapper_t temp;
+                if ((temp = old.get_left()) == nullptr)
+                {
+                    if ((temp = old.get_right()) == nullptr)
+                    { parent.set_child(nullptr); }
+                    else
+                    { parent.set_child(temp); }
+                    node.set_parent(nullptr);
+                }
+                else
+                {
+                    if (old.get_right() == nullptr)
+                    {
+                        parent.set_child(temp);
+                        node.set_parent(nullptr);
+                    }
+                    else
+                    {
+
+                    }
+                }
+            }
+        };
     }
 
+#define _COMiC_RedBlackTree__FindNode1(                                                                                        \
+        VARIABLE_ERROR_P,                                                                                                      \
+        VARIABLE_PARENT,                                                                                                       \
+        VARIABLE_POINTER,                                                                                                      \
+        VARIABLE_KEY,                                                                                                          \
+        VARIABLE_COMPARISON_RESULT,                                                                                            \
+        LABEL_START,                                                                                                           \
+        LABEL_TO_LEFT,                                                                                                         \
+        LABEL_TO_RIGHT,                                                                                                        \
+        ACTION_LEFT,                                                                                                           \
+        ACTION_RIGHT,                                                                                                          \
+        ACTION_SAME                                                                                                            \
+)                                                                                                                              \
+    {                                                                                                                          \
+        LABEL_START:                                                                                                           \
+        (VARIABLE_PARENT) = (VARIABLE_POINTER);                                                                                \
+                                                                                                                               \
+        if ((VARIABLE_KEY).compare_to((VARIABLE_ERROR_P), (VARIABLE_POINTER), &(VARIABLE_COMPARISON_RESULT)))                  \
+        { return COMiC_ERROR; }                                                                                                \
+                                                                                                                               \
+        if ((VARIABLE_COMPARISON_RESULT) > 0)                                                                                  \
+        {                                                                                                                      \
+            (VARIABLE_POINTER) = (VARIABLE_POINTER).get_right();                                                               \
+            if ((VARIABLE_POINTER) == nullptr)                                                                                 \
+            { ACTION_RIGHT; }                                                                                                  \
+            goto LABEL_TO_RIGHT;                                                                                               \
+        }                                                                                                                      \
+        if ((VARIABLE_COMPARISON_RESULT) < 0)                                                                                  \
+        {                                                                                                                      \
+            (VARIABLE_POINTER) = (VARIABLE_POINTER).get_left();                                                                \
+            if ((VARIABLE_POINTER) == nullptr)                                                                                 \
+            { ACTION_LEFT; }                                                                                                   \
+            goto LABEL_TO_LEFT;                                                                                                \
+        }                                                                                                                      \
+        else                                                                                                                   \
+        { ACTION_SAME; }                                                                                                       \
+    }
 
-    template<
-            class action_t,
-            class node_wrapper_t,
-            class tree_wrapper_t = _COMiC_RedBlackTree::DefaultTree_Wrapper<node_wrapper_t>,
-            class as_parent_wrapper_left_t = _COMiC_RedBlackTree::_AsParent_Wrapper::NodeLeft_CN<node_wrapper_t>,
-            class as_parent_wrapper_right_t = _COMiC_RedBlackTree::_AsParent_Wrapper::NodeRight_CN<node_wrapper_t>,
-            class as_parent_wrapper_root_t = _COMiC_RedBlackTree::_AsParent_Wrapper::Root_CN<tree_wrapper_t, node_wrapper_t>
-    >
-    static inline COMiC_IfError _FindNode(
-            COMiC_Out COMiC_Error *error,
-            COMiC_In tree_wrapper_t tree,
-            COMiC_In COMiC_Out node_wrapper_t *node,
-            COMiC_Out node_wrapper_t *parent
-    )
-    {
-        node_wrapper_t pointer = tree.get_root();
-        COMiC_ComparisonResult comparsion_result;
-
-
-        if (pointer == nullptr)
-        {
-            action_t::empty(as_parent_wrapper_root_t(tree), *node);
-            *node = node_wrapper_t(nullptr);
-            *parent = node_wrapper_t(nullptr);
-            return COMiC_SUCCESS;
-        }
-
-        {
-            *parent = pointer;
-            if (node->compare_to(error, pointer, &comparsion_result))
-            { return COMiC_ERROR; }
-
-            if (comparsion_result < 0)
-            {
-                pointer = pointer.get_left();
-                if (pointer == nullptr)
-                {
-                    action_t::empty(as_parent_wrapper_left_t(*parent), *node);
-                    *node = node_wrapper_t(nullptr);
-                    return COMiC_SUCCESS;
-                }
-                goto LOOP_LEFT;
-            }
-            else if (comparsion_result > 0)
-            {
-                pointer = pointer.get_right();
-                if (pointer == nullptr)
-                {
-                    action_t::empty(as_parent_wrapper_right_t(*parent), *node);
-                    *node = node_wrapper_t(nullptr);
-                    return COMiC_SUCCESS;
-                }
-                goto LOOP_RIGHT;
-            }
-            else
-            {
-                action_t::replace(as_parent_wrapper_root_t(tree), *node, pointer);
-                *node = pointer;
-                return COMiC_SUCCESS;
-            }
-        }
-
-        LOOP_LEFT:
-        {
-            *parent = pointer;
-
-            if (node->compare_to(error, pointer, &comparsion_result))
-            { return COMiC_ERROR; }
-
-            if (comparsion_result < 0)
-            {
-                pointer = pointer.get_left();
-                if (pointer == nullptr)
-                {
-                    action_t::empty(as_parent_wrapper_left_t(*parent), *node);
-                    *node = node_wrapper_t(nullptr);
-                    return COMiC_SUCCESS;
-                }
-                goto LOOP_LEFT;
-            }
-            else if (comparsion_result > 0)
-            {
-                pointer = pointer.get_right();
-                if (pointer == nullptr)
-                {
-                    action_t::empty(as_parent_wrapper_right_t(*parent), *node);
-                    *node = node_wrapper_t(nullptr);
-                    return COMiC_SUCCESS;
-                }
-                goto LOOP_RIGHT;
-            }
-            else
-            {
-                action_t::replace(as_parent_wrapper_left_t(*parent), *node, pointer);
-                *node = pointer;
-                return COMiC_SUCCESS;
-            }
-        }
-
-        LOOP_RIGHT:
-        {
-            *parent = pointer;
-
-            if (node->compare_to(error, pointer, &comparsion_result))
-            { return COMiC_ERROR; }
-
-            if (comparsion_result < 0)
-            {
-                pointer = pointer.get_left();
-                if (pointer == nullptr)
-                {
-                    action_t::empty(as_parent_wrapper_left_t(*parent), *node);
-                    *node = node_wrapper_t(nullptr);
-                    return COMiC_SUCCESS;
-                }
-                goto LOOP_LEFT;
-            }
-            else if (comparsion_result > 0)
-            {
-                pointer = pointer.get_right();
-                if (pointer == nullptr)
-                {
-                    action_t::empty(as_parent_wrapper_right_t(*parent), *node);
-                    *node = node_wrapper_t(nullptr);
-                    return COMiC_SUCCESS;
-                }
-                goto LOOP_RIGHT;
-            }
-            else
-            {
-                action_t::replace(as_parent_wrapper_right_t(*parent), *node, pointer);
-                *node = pointer;
-                return COMiC_SUCCESS;
-            }
-        }
+#define _COMiC_RedBlackTree__FindNode3(                                                                                        \
+        VARIABLE_TREE_WRAPPER,                                                                                                 \
+        VARIABLE_ERROR_P,                                                                                                      \
+        VARIABLE_PARENT,                                                                                                       \
+        VARIABLE_POINTER,                                                                                                      \
+        VARIABLE_KEY,                                                                                                          \
+        VARIABLE_COMPARISON_RESULT,                                                                                            \
+        LABEL_GO_ROOT,                                                                                                         \
+        LABEL_LOOP_LEFT,                                                                                                       \
+        LABEL_LOOP_RIGHT,                                                                                                      \
+        ACTION_EMPTY_ROOT,                                                                                                     \
+        ACTION_EMPTY_LEFT_CHILD,                                                                                               \
+        ACTION_EMPTY_RIGHT_CHILD,                                                                                              \
+        ACTION_EQUALS_ROOT,                                                                                                    \
+        ACTION_EQUALS_LEFT_CHILD,                                                                                              \
+        ACTION_EQUALS_RIGHT_CHILD                                                                                              \
+)                                                                                                                              \
+    {                                                                                                                          \
+        COMiC_ComparisonResult (VARIABLE_COMPARISON_RESULT);                                                                   \
+                                                                                                                               \
+        (VARIABLE_POINTER) = (VARIABLE_TREE_WRAPPER).get_root();                                                               \
+        if ((VARIABLE_POINTER) == nullptr)                                                                                     \
+        { ACTION_EMPTY_ROOT; }                                                                                                 \
+                                                                                                                               \
+        _COMiC_RedBlackTree__FindNode1(                                                                                        \
+            VARIABLE_ERROR_P,                                                                                                  \
+            VARIABLE_PARENT,                                                                                                   \
+            VARIABLE_POINTER,                                                                                                  \
+            VARIABLE_KEY,                                                                                                      \
+            VARIABLE_COMPARISON_RESULT,                                                                                        \
+            LABEL_GO_ROOT,                                                                                                     \
+            LABEL_LOOP_LEFT,                                                                                                   \
+            LABEL_LOOP_RIGHT,                                                                                                  \
+            ACTION_EMPTY_LEFT_CHILD,                                                                                           \
+            ACTION_EMPTY_RIGHT_CHILD,                                                                                          \
+            ACTION_EQUALS_ROOT                                                                                                 \
+        )                                                                                                                      \
+        _COMiC_RedBlackTree__FindNode1(                                                                                        \
+            VARIABLE_ERROR_P,                                                                                                  \
+            VARIABLE_PARENT,                                                                                                   \
+            VARIABLE_POINTER,                                                                                                  \
+            VARIABLE_KEY,                                                                                                      \
+            VARIABLE_COMPARISON_RESULT,                                                                                        \
+            LABEL_LOOP_LEFT,                                                                                                   \
+            LABEL_LOOP_LEFT,                                                                                                   \
+            LABEL_LOOP_RIGHT,                                                                                                  \
+            ACTION_EMPTY_LEFT_CHILD,                                                                                           \
+            ACTION_EMPTY_RIGHT_CHILD,                                                                                          \
+            ACTION_EQUALS_LEFT_CHILD                                                                                           \
+        )                                                                                                                      \
+        _COMiC_RedBlackTree__FindNode1(                                                                                        \
+            VARIABLE_ERROR_P,                                                                                                  \
+            VARIABLE_PARENT,                                                                                                   \
+            VARIABLE_POINTER,                                                                                                  \
+            VARIABLE_KEY,                                                                                                      \
+            VARIABLE_COMPARISON_RESULT,                                                                                        \
+            LABEL_LOOP_RIGHT,                                                                                                  \
+            LABEL_LOOP_LEFT,                                                                                                   \
+            LABEL_LOOP_RIGHT,                                                                                                  \
+            ACTION_EMPTY_LEFT_CHILD,                                                                                           \
+            ACTION_EMPTY_RIGHT_CHILD,                                                                                          \
+            ACTION_EQUALS_RIGHT_CHILD                                                                                          \
+        )                                                                                                                      \
     }
 
     /* https://en.wikipedia.org/wiki/Red%E2%80%93black_tree#Insertion */
@@ -412,18 +417,57 @@ namespace _COMiC_RedBlackTree
         node_wrapper_t uncle(nullptr);
         node_wrapper_t grandparent(nullptr);
 
-        if (_COMiC_RedBlackTree::_FindNode<_Actions::Add_CN, node_wrapper_t, tree_wrapper_t, as_parent_wrapper_left_t, as_parent_wrapper_right_t, as_parent_wrapper_root_t>(error, self, &node, &parent))
-        { return COMiC_ERROR; }
+        _COMiC_RedBlackTree__FindNode3(
+                self,
+                error,
+                parent,
+                grandparent,
+                node,
+                compariosn_result,
+                FIND_ROOT,
+                FIND_LEFT_CHILD,
+                FIND_RIGHT_CHILD,
+                {
+                    *cell = nullptr;
+                    self.set_root(node);
+                    node.set_left(nullptr);
+                    node.set_right(nullptr);
+                    node.set_parent(nullptr);
+                    return COMiC_SUCCESS;
+                },
+                {
+                    *cell = nullptr;
+                    parent.set_left(node);
+                    goto BALANCE;
+                },
+                {
+                    *cell = nullptr;
+                    parent.set_right(node);
+                    goto BALANCE;
+                },
+                {
+                    *cell = grandparent.raw();
+                    _LinkInsteadOf(as_parent_wrapper_root_t(self), node, grandparent);
+                    return COMiC_SUCCESS;
+                },
+                {
+                    *cell = grandparent.raw();
+                    _LinkInsteadOf(as_parent_wrapper_left_t(parent), node, grandparent);
+                    return COMiC_SUCCESS;
+                },
+                {
+                    *cell = grandparent.raw();
+                    _LinkInsteadOf(as_parent_wrapper_right_t(parent), node, grandparent);
+                    return COMiC_SUCCESS;
+                }
+        )
 
-        if (parent == nullptr || node != nullptr)
-        {
-            *cell = node.raw();
-            return COMiC_SUCCESS;
-        }
-
-        node = node_wrapper_t(*cell);
+        BALANCE:
 
         node.set_color(COMiC_RedBlackTree_RED);
+        node.set_parent(parent);
+        node.set_left(nullptr);
+        node.set_right(nullptr);
 
         do
         {
@@ -496,31 +540,5 @@ namespace _COMiC_RedBlackTree
         /* https://en.wikipedia.org/wiki/Red%E2%80%93black_tree#Insert_case_3 */
         return COMiC_SUCCESS;
     }
-
-
-    template<
-            class node_wrapper_t,
-            class tree_wrapper_t =_COMiC_RedBlackTree::DefaultTree_Wrapper<node_wrapper_t>,
-            typename raw_node_t = COMiC_RedBlackTree_Node *,
-            class as_parent_wrapper_left_t = _COMiC_RedBlackTree::_AsParent_Wrapper::NodeLeft_CN<node_wrapper_t>,
-            class as_parent_wrapper_right_t = _COMiC_RedBlackTree::_AsParent_Wrapper::NodeRight_CN<node_wrapper_t>,
-            class as_parent_wrapper_root_t = _COMiC_RedBlackTree::_AsParent_Wrapper::Root_CN<tree_wrapper_t, node_wrapper_t>
-    >
-    static inline COMiC_IfError UnLink(
-            COMiC_In tree_wrapper_t self,
-            COMiC_Out COMiC_Error *const error,
-            COMiC_In COMiC_Out raw_node_t cell
-    )
-    {
-        node_wrapper_t node = node_wrapper_t(*cell);
-        node_wrapper_t parent(nullptr);
-        node_wrapper_t uncle(nullptr);
-        node_wrapper_t grandparent(nullptr);
-
-        if (_COMiC_RedBlackTree::_FindNode<_Actions::Add_CN, node_wrapper_t, tree_wrapper_t>(error, self, &node, &parent))
-        { return COMiC_ERROR; }
-
-
-    } // end of RBdelete2
 }
 #endif /* COMiC_Core_RB_TREE_HPP */
