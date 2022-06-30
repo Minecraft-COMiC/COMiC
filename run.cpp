@@ -2,7 +2,7 @@
 #include <iostream>
 #include <map>
 #include <cstdlib>
-#define arr_size (60000000)
+#define arr_size (60)
 
 void my_func()
 {}
@@ -18,13 +18,17 @@ int main()
 {
     clock_t t = clock();
     my_func();
-#if 0
-    static COMiC_RedBlackTree_Node nodes[arr_size];
-    std::map<int, COMiC_RedBlackTree_Node*> tree;
+#if 1
+    static int nodes[arr_size];
+    std::map<int, void *> tree;
 
     for (int i = 0; i < arr_size; i++)
     {
-        tree[i] = &(nodes[i]);
+        tree.insert({i, (void *)(uintptr_t)i});
+    }
+    for (int i = 31; i < arr_size; i++)
+    {
+        tree.erase(i);
     }
 #else
     COMiC_RedBlackTree tree{nullptr};
