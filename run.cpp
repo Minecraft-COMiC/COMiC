@@ -2,7 +2,8 @@
 #include <iostream>
 #include <map>
 #include <cstdlib>
-#define arr_size (60)
+
+#define arr_size (60000000)
 
 void my_func()
 {}
@@ -14,38 +15,58 @@ void _start()
     main();
 }
 
+class key
+{
+private:
+    COMiC_RedBlackTree_Node *p;
+public:
+    explicit key(COMiC_RedBlackTree_Node *p) : p(p)
+    {}
+
+    COMiC_IfError compare_to(COMiC_RedBlackTree_Node *o, COMiC_ComparisonResult *r)
+    {
+        if (this->p < o)
+        { *r = COMiC_LESS; }
+        else if (this->p > o)
+        { *r = COMiC_GREATER; }
+        else
+        { *r = COMiC_EQUALS; }
+        return COMiC_SUCCESS;
+    }
+};
+
 int main()
 {
     clock_t t = clock();
     my_func();
-#if 1
-    static int nodes[arr_size];
-    std::map<int, void *> tree;
+    static COMiC_RedBlackTree_Node nodes[arr_size];
+#if 0
+    std::map<COMiC_RedBlackTree_Node *, int> tree;
 
     for (int i = 0; i < arr_size; i++)
     {
-        tree.insert({i, (void *)(uintptr_t)i});
+        tree.insert({&(nodes[i]), i});
     }
-    for (int i = 31; i < arr_size; i++)
+    for (int i = 0; i < arr_size; i++)
     {
-        tree.erase(i);
+        tree.erase(&(nodes[i]));
     }
 #else
-    COMiC_RedBlackTree tree{nullptr};
-    static COMiC_RedBlackTree_Node nodes[arr_size];
+    COMiC_RedBlackTree tree;
+    COMiC_RedBlackTree_Init(&tree, nullptr);
 
     COMiC_RedBlackTree_Node *p;
     for (int i = 0; i < arr_size; i++)
     {
         p = &(nodes[i]);
-        _COMiC_RedBlackTree::Link<_COMiC_RedBlackTree::DefaultNode_PointersWrapper>(
-                _COMiC_RedBlackTree::DefaultTree_Wrapper<_COMiC_RedBlackTree::DefaultNode_PointersWrapper>(&tree),
-                nullptr,
-                &p
-        );
+        COMiC_RedBlackTree_Link<key>(&tree, key(p), &p);
+    }
+    for (int i = 0; i < arr_size; i++)
+    {
+        COMiC_RedBlackTree_UnLink(&tree, &(nodes[i]));
     }
 #endif
-    std::cout << ((long double)(clock() - t)) / CLOCKS_PER_SEC << std::endl;
+    std::cout << ((long double) (clock() - t)) / CLOCKS_PER_SEC << std::endl;
     int a = 1;
     return 0;
 }

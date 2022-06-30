@@ -1,38 +1,38 @@
 #include "rb_tree.h"
 
-static constexpr COMiC_RedBlackTree_Node **_COMiC_RedBlackTree_CalcParentChildP(COMiC_RedBlackTree *tree, COMiC_RedBlackTree_Node *node) noexcept
+static inline constexpr COMiC_RedBlackTree_Node **_COMiC_RedBlackTree_CalcParentChildP(COMiC_RedBlackTree *tree, COMiC_RedBlackTree_Node *node) noexcept
 {
     if (node == node->parent->right)
     { return &(node->parent->right); }
     else if (node == node->parent->left)
     { return &(node->parent->left); }
     else
-    { return &(tree->root); }
+    { return &(tree->sentinel.parent); }
 }
 
 
-static constexpr COMiC_RedBlackTree_Node *_COMiC_RedBlackTree_PrevSubKey(COMiC_RedBlackTree_Node *node) noexcept
+static inline constexpr COMiC_RedBlackTree_Node *_COMiC_RedBlackTree_PrevSubKey(COMiC_RedBlackTree *tree, COMiC_RedBlackTree_Node *node) noexcept
 {
-    while (node->right != nullptr)
+    while (node->right != &(tree->sentinel))
     { node = node->right; }
     return node;
 }
 
 
-static constexpr COMiC_RedBlackTree_Node *_COMiC_RedBlackTree_NextSubKey(COMiC_RedBlackTree_Node *node) noexcept
+static inline constexpr COMiC_RedBlackTree_Node *_COMiC_RedBlackTree_NextSubKey(COMiC_RedBlackTree *tree, COMiC_RedBlackTree_Node *node) noexcept
 {
-    while (node->left != nullptr)
+    while (node->left != &(tree->sentinel))
     { node = node->left; }
     return node;
 }
 
 
-void constexpr _COMiC_RedBlackTree_RotateLeft(COMiC_RedBlackTree_Node **parent_child_p, COMiC_RedBlackTree_Node *top) noexcept
+void inline constexpr _COMiC_RedBlackTree_RotateLeft(COMiC_RedBlackTree *tree, COMiC_RedBlackTree_Node **parent_child_p, COMiC_RedBlackTree_Node *top) noexcept
 {
     COMiC_RedBlackTree_Node *node = top->right;
     top->right = node->left;
 
-    if (node->left != nullptr)
+    if (node->left != &(tree->sentinel))
     { node->left->parent = top; }
 
     node->parent = top->parent;
@@ -40,15 +40,16 @@ void constexpr _COMiC_RedBlackTree_RotateLeft(COMiC_RedBlackTree_Node **parent_c
     *parent_child_p = node;
 
     node->left = top;
-    top->right = node;
+    top->parent = node;
 }
 
-void constexpr _COMiC_RedBlackTree_RotateRight(COMiC_RedBlackTree_Node **parent_child_p, COMiC_RedBlackTree_Node *top) noexcept
+
+inline constexpr void _COMiC_RedBlackTree_RotateRight(COMiC_RedBlackTree *tree, COMiC_RedBlackTree_Node **parent_child_p, COMiC_RedBlackTree_Node *top) noexcept
 {
     COMiC_RedBlackTree_Node *node = top->left;
     top->left = node->right;
 
-    if (node->right == nullptr)
+    if (node->right != &(tree->sentinel))
     { node->right->parent = top; }
 
     node->parent = top->parent;
@@ -59,27 +60,48 @@ void constexpr _COMiC_RedBlackTree_RotateRight(COMiC_RedBlackTree_Node **parent_
     top->parent = node;
 }
 
-
-COMiC_RedBlackTree_Node *_COMiC_RedBlackTree_Link(COMiC_RedBlackTree *tree, COMiC_RedBlackTree_Node *parent, COMiC_RedBlackTree_Node **parent_child_p, COMiC_RedBlackTree_Node *node) noexcept
+template<class key_wrapper_t>
+inline COMiC_IfError _COMiC_RedBlackTree_Find(COMiC_RedBlackTree *tree, key_wrapper_t key, COMiC_RedBlackTree_Node **parent, COMiC_RedBlackTree_Node ***parent_child_p)
 {
-    COMiC_RedBlackTree_Node *parent_sibling;
-    COMiC_RedBlackTree_Node *pointer;
+    COMiC_ComparisonResult comparison_result;
 
-    node->parent = parent;
-    if (parent == nullptr)
+    *parent = &((*tree).sentinel);
+    *parent_child_p = &((*parent)->parent);
+    while (**parent_child_p != &(tree->sentinel))
     {
-        node->color = COMiC_RedBlackTree_BLACK; // the root is black
-        return nullptr;
-    }
-    else
-    { *parent_child_p = node; }
+        *parent = **parent_child_p;
+        if (key.compare_to(**parent_child_p, &comparison_result))
+        { return COMiC_ERROR; }
 
-    pointer = node;
+        if (comparison_result > 0)
+        { *parent_child_p = &((**parent_child_p)->right); }
+        else if (comparison_result < 0)
+        { *parent_child_p = &((**parent_child_p)->left); }
+        else
+        { break; }
+    }
+    return COMiC_SUCCESS;
+}
+
+inline constexpr COMiC_IfError _COMiC_RedBlackTree_Link(COMiC_RedBlackTree *tree, COMiC_RedBlackTree_Node *parent, COMiC_RedBlackTree_Node **parent_child_p, COMiC_RedBlackTree_Node *node) noexcept
+{
+    node->parent = parent;
+    *parent_child_p = node;
+    node->left = &(tree->sentinel);
+    node->right = &(tree->sentinel);
+    if (parent == &(tree->sentinel))
+    {
+        node->color = COMiC_RedBlackTree_BLACK;
+        return COMiC_SUCCESS;
+    }
+    node->color = COMiC_RedBlackTree_RED;
+
+    COMiC_RedBlackTree_Node *pointer = node;
     while (pointer->parent->color == COMiC_RedBlackTree_RED)
     {
         if (pointer->parent == pointer->parent->parent->left)
         {
-            parent_sibling = pointer->parent->parent->right;
+            COMiC_RedBlackTree_Node *parent_sibling = pointer->parent->parent->right;
             if (parent_sibling->color == COMiC_RedBlackTree_RED)
             {
                 pointer->parent->color = COMiC_RedBlackTree_BLACK;
@@ -92,17 +114,17 @@ COMiC_RedBlackTree_Node *_COMiC_RedBlackTree_Link(COMiC_RedBlackTree *tree, COMi
                 if (pointer == pointer->parent->right)
                 {
                     pointer = pointer->parent;
-                    _COMiC_RedBlackTree_RotateLeft(&(pointer->parent->left), pointer);
+                    _COMiC_RedBlackTree_RotateLeft(tree, _COMiC_RedBlackTree_CalcParentChildP(tree, pointer), pointer);
                 }
 
                 pointer->parent->color = COMiC_RedBlackTree_BLACK;
                 pointer->parent->parent->color = COMiC_RedBlackTree_RED;
-                _COMiC_RedBlackTree_RotateRight(_COMiC_RedBlackTree_CalcParentChildP(tree, pointer->parent->parent), pointer->parent->parent);
+                _COMiC_RedBlackTree_RotateRight(tree, _COMiC_RedBlackTree_CalcParentChildP(tree, pointer->parent->parent), pointer->parent->parent);
             }
         }
         else
         {
-            parent_sibling = pointer->parent->parent->right;
+            COMiC_RedBlackTree_Node *parent_sibling = pointer->parent->parent->left;
             if (parent_sibling->color == COMiC_RedBlackTree_RED)
             {
                 pointer->parent->color = COMiC_RedBlackTree_BLACK;
@@ -115,43 +137,92 @@ COMiC_RedBlackTree_Node *_COMiC_RedBlackTree_Link(COMiC_RedBlackTree *tree, COMi
                 if (pointer == pointer->parent->left)
                 {
                     pointer = pointer->parent;
-                    _COMiC_RedBlackTree_RotateLeft(&(pointer->parent->right), pointer);
+                    _COMiC_RedBlackTree_RotateLeft(tree, _COMiC_RedBlackTree_CalcParentChildP(tree, pointer), pointer);
                 }
 
                 pointer->parent->color = COMiC_RedBlackTree_BLACK;
                 pointer->parent->parent->color = COMiC_RedBlackTree_RED;
-                _COMiC_RedBlackTree_RotateLeft(_COMiC_RedBlackTree_CalcParentChildP(tree, pointer->parent->parent), pointer->parent->parent);
+                _COMiC_RedBlackTree_RotateLeft(tree, _COMiC_RedBlackTree_CalcParentChildP(tree, pointer->parent->parent), pointer->parent->parent);
             }
         }
     }
 
-    tree->root->color = COMiC_RedBlackTree_BLACK;
-    return node;
+    tree->sentinel.parent->color = COMiC_RedBlackTree_BLACK;
+    return COMiC_SUCCESS;
 }
 
-COMiC_IfError _COMiC_RedBlackTree_UnLink(COMiC_RedBlackTree *tree, COMiC_RedBlackTree_Node *node) noexcept
+static inline constexpr void _COMiC_RedBlackTree_LinkInsteadOf(COMiC_RedBlackTree *tree, COMiC_RedBlackTree_Node *parent, COMiC_RedBlackTree_Node **parent_child_p, COMiC_RedBlackTree_Node *node, COMiC_RedBlackTree_Node *destination)
 {
-    COMiC_RedBlackTree_Node *fix_node; // the node to recolor as needed
-    COMiC_RedBlackTree_Node *fix_node_parent; // parent of fix_node (which may be nil)
+    if (node == destination)
+    { return; }
+
+    *parent_child_p = node;
+    node->parent = parent;
+
+    COMiC_RedBlackTree_Node *temp = destination->left;
+    node->left = temp;
+    if (temp != &(tree->sentinel))
+    { temp->parent = node; }
+
+    temp = destination->right;
+    node->right = temp;
+    if (temp != &(tree->sentinel))
+    { temp->parent = node; }
+
+    node->color = destination->color;
+
+#if 0
+    destination->parent =  &(tree->sentinel);
+    destination->left =  &(tree->sentinel);
+    destination->right =  &(tree->sentinel);
+#endif
+}
+
+template<class key_wrapper_t>
+inline COMiC_IfError COMiC_RedBlackTree_Link(COMiC_RedBlackTree *tree, key_wrapper_t key, COMiC_RedBlackTree_Node **node) noexcept
+{
+    COMiC_RedBlackTree_Node *parent;
+    COMiC_RedBlackTree_Node **parent_child_p;
+    if (_COMiC_RedBlackTree_Find(tree, key, &parent, &parent_child_p))
+    { return COMiC_ERROR; }
+
+    if (*parent_child_p != &(tree->sentinel))
+    {
+        COMiC_RedBlackTree_Node *old = *parent_child_p;
+        _COMiC_RedBlackTree_LinkInsteadOf(tree, parent, parent_child_p, *node, *parent_child_p);
+        *node = old;
+        return COMiC_SUCCESS;
+    }
+
+    if (_COMiC_RedBlackTree_Link(tree, parent, parent_child_p, *node))
+    { return COMiC_ERROR; }
+    return COMiC_SUCCESS;
+
+}
+
+COMiC_IfError COMiC_RedBlackTree_UnLink(COMiC_RedBlackTree *tree, COMiC_RedBlackTree_Node *node) noexcept
+{
+    COMiC_RedBlackTree_Node *fix_node;
+    COMiC_RedBlackTree_Node *fix_node_parent;
     COMiC_RedBlackTree_Node *pointer = node;
 
-    if (pointer->left == nullptr)
+    if (pointer->left == &(tree->sentinel))
     { fix_node = pointer->right; }
-    else if (pointer->right == nullptr)
+    else if (pointer->right == &(tree->sentinel))
     { fix_node = pointer->left; }
     else
     {
-        pointer = _COMiC_RedBlackTree_NextSubKey(node->right);
+        pointer = _COMiC_RedBlackTree_NextSubKey(tree, node->right);
         fix_node = pointer->right;
         goto TWO_CHILDREN;
     }
 
     fix_node_parent = node->parent;
-    if (fix_node != nullptr)
+    if (fix_node != &(tree->sentinel))
     { fix_node->parent = fix_node_parent; }
 
-    if (node->parent == nullptr)
-    { tree->root = fix_node; }
+    if (node->parent == &(tree->sentinel))
+    { tree->sentinel.parent = fix_node; }
     else if (fix_node_parent->left == node)
     { fix_node_parent->left = fix_node; }
     else
@@ -159,10 +230,10 @@ COMiC_IfError _COMiC_RedBlackTree_UnLink(COMiC_RedBlackTree *tree, COMiC_RedBlac
 
 #   if 0
     if (tree->lowest == node)
-    { tree->lowest = (fix_node == nullptr) ? fix_node_parent : _COMiC_RedBlackTree_PrevSubKey(fix_node); }
+    { tree->lowest = (fix_node ==  &(tree->sentinel)) ? fix_node_parent : _COMiC_RedBlackTree_PrevSubKey(fix_node); }
 
     if (tree->greatest == node)
-    { tree->greatest = (fix_node == nullptr) ? fix_node_parent : _COMiC_RedBlackTree_NextSubKey(fix_node); }
+    { tree->greatest = (fix_node ==  &(tree->sentinel)) ? fix_node_parent : _COMiC_RedBlackTree_NextSubKey(fix_node); }
 #   endif
 
     if (node->color == COMiC_RedBlackTree_RED)
@@ -179,7 +250,7 @@ COMiC_IfError _COMiC_RedBlackTree_UnLink(COMiC_RedBlackTree *tree, COMiC_RedBlac
     else
     {
         fix_node_parent = pointer->parent;
-        if (fix_node != nullptr)
+        if (fix_node != &(tree->sentinel))
         { fix_node->parent = fix_node_parent; }
 
         fix_node_parent->left = fix_node;
@@ -187,8 +258,8 @@ COMiC_IfError _COMiC_RedBlackTree_UnLink(COMiC_RedBlackTree *tree, COMiC_RedBlac
         node->right->right = pointer;
     }
 
-    if (node->parent == nullptr)
-    { tree->root = pointer; }
+    if (node->parent == &(tree->sentinel))
+    { tree->sentinel.parent = pointer; }
     else if (node->parent->left == node)
     { node->parent->left = pointer; }
     else
@@ -201,7 +272,7 @@ COMiC_IfError _COMiC_RedBlackTree_UnLink(COMiC_RedBlackTree *tree, COMiC_RedBlac
     pointer->color = COMiC_RedBlackTree_BLACK;
     BALANCE:
 
-    while ((fix_node_parent = fix_node->parent) != nullptr && fix_node->color == COMiC_RedBlackTree_BLACK)
+    while ((fix_node_parent = fix_node->parent) != &(tree->sentinel) && fix_node->color == COMiC_RedBlackTree_BLACK)
     {
         if (fix_node == fix_node_parent->left)
         {
@@ -210,11 +281,11 @@ COMiC_IfError _COMiC_RedBlackTree_UnLink(COMiC_RedBlackTree *tree, COMiC_RedBlac
             {
                 pointer->color = COMiC_RedBlackTree_BLACK;
                 fix_node_parent->color = COMiC_RedBlackTree_RED;
-                _COMiC_RedBlackTree_RotateLeft(_COMiC_RedBlackTree_CalcParentChildP(tree, fix_node_parent), fix_node_parent);
+                _COMiC_RedBlackTree_RotateLeft(tree, _COMiC_RedBlackTree_CalcParentChildP(tree, fix_node_parent), fix_node_parent);
                 pointer = fix_node_parent->right;
             }
 
-            if (pointer == nullptr)
+            if (pointer == &(tree->sentinel))
             { fix_node = fix_node_parent; }
             else if (pointer->left->color == COMiC_RedBlackTree_BLACK && pointer->right->color == COMiC_RedBlackTree_BLACK)
             {
@@ -227,14 +298,14 @@ COMiC_IfError _COMiC_RedBlackTree_UnLink(COMiC_RedBlackTree *tree, COMiC_RedBlac
                 {
                     pointer->left->color = COMiC_RedBlackTree_BLACK;
                     pointer->color = COMiC_RedBlackTree_RED;
-                    _COMiC_RedBlackTree_RotateRight(_COMiC_RedBlackTree_CalcParentChildP(tree, pointer), pointer);
+                    _COMiC_RedBlackTree_RotateRight(tree, _COMiC_RedBlackTree_CalcParentChildP(tree, pointer), pointer);
                     pointer = fix_node_parent->right;
                 }
 
                 pointer->color = fix_node_parent->color;
                 fix_node_parent->color = COMiC_RedBlackTree_BLACK;
                 pointer->right->color = COMiC_RedBlackTree_BLACK;
-                _COMiC_RedBlackTree_RotateLeft(_COMiC_RedBlackTree_CalcParentChildP(tree, fix_node_parent), fix_node_parent);
+                _COMiC_RedBlackTree_RotateLeft(tree, _COMiC_RedBlackTree_CalcParentChildP(tree, fix_node_parent), fix_node_parent);
                 break;
             }
         }
@@ -245,11 +316,11 @@ COMiC_IfError _COMiC_RedBlackTree_UnLink(COMiC_RedBlackTree *tree, COMiC_RedBlac
             {
                 pointer->color = COMiC_RedBlackTree_BLACK;
                 fix_node_parent->color = COMiC_RedBlackTree_RED;
-                _COMiC_RedBlackTree_RotateRight(_COMiC_RedBlackTree_CalcParentChildP(tree, fix_node_parent), fix_node_parent);
+                _COMiC_RedBlackTree_RotateRight(tree, _COMiC_RedBlackTree_CalcParentChildP(tree, fix_node_parent), fix_node_parent);
                 pointer = fix_node_parent->left;
             }
 
-            if (pointer == nullptr)
+            if (pointer == &(tree->sentinel))
             { fix_node = fix_node_parent; }
             else if (pointer->right->color == COMiC_RedBlackTree_BLACK && pointer->left->color == COMiC_RedBlackTree_BLACK)
             {
@@ -262,14 +333,14 @@ COMiC_IfError _COMiC_RedBlackTree_UnLink(COMiC_RedBlackTree *tree, COMiC_RedBlac
                 {
                     pointer->right->color = COMiC_RedBlackTree_BLACK;
                     pointer->color = COMiC_RedBlackTree_RED;
-                    _COMiC_RedBlackTree_RotateLeft(_COMiC_RedBlackTree_CalcParentChildP(tree, pointer), pointer);
+                    _COMiC_RedBlackTree_RotateLeft(tree, _COMiC_RedBlackTree_CalcParentChildP(tree, pointer), pointer);
                     pointer = fix_node_parent->left;
                 }
 
                 pointer->color = fix_node_parent->color;
                 fix_node_parent->color = COMiC_RedBlackTree_BLACK;
                 pointer->left->color = COMiC_RedBlackTree_BLACK;
-                _COMiC_RedBlackTree_RotateRight(_COMiC_RedBlackTree_CalcParentChildP(tree, fix_node_parent), fix_node_parent);
+                _COMiC_RedBlackTree_RotateRight(tree, _COMiC_RedBlackTree_CalcParentChildP(tree, fix_node_parent), fix_node_parent);
                 break;
             }
         }

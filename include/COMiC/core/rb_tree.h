@@ -24,7 +24,7 @@ struct COMiC_RedBlackTree_Node
 
 typedef struct COMiC_RedBlackTree
 {
-    struct COMiC_RedBlackTree_Node *root;
+    COMiC_RedBlackTree_Node sentinel;
 } COMiC_RedBlackTree;
 
 static constexpr inline COMiC_IfError COMiC_RedBlackTree_Init(
@@ -32,14 +32,17 @@ static constexpr inline COMiC_IfError COMiC_RedBlackTree_Init(
         COMiC_Out COMiC_Error *error
 ) noexcept
 {
-    self->root = NULL;
+    self->sentinel.color = COMiC_RedBlackTree_BLACK;
+    self->sentinel.parent = &(self->sentinel);
+    self->sentinel.left = nullptr;
+    self->sentinel.right = nullptr;
     return COMiC_SUCCESS;
 }
 
 static constexpr inline COMiC_Bool COMiC_RedBlackTree_IsEmpty(
         COMiC_In COMiC_RedBlackTree *self
 ) noexcept
-{ return self->root == NULL; }
+{ return self->sentinel.parent == &(self->sentinel); }
 
 
 # ifdef __cplusplus
