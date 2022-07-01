@@ -25,6 +25,7 @@ typedef struct COMiC_OrderedRedBlackTree
     COMiC_OrderedRedBlackTree_Node *last;
 } COMiC_OrderedRedBlackTree;
 
+COMiC_Constructor
 static constexpr inline COMiC_IfError COMiC_OrderedRedBlackTree_Init(
         COMiC_Out COMiC_OrderedRedBlackTree *self,
         COMiC_Out COMiC_Error *error
@@ -38,6 +39,13 @@ static constexpr inline COMiC_IfError COMiC_OrderedRedBlackTree_Init(
 
     return COMiC_SUCCESS;
 }
+
+COMiC_Destructor
+static constexpr inline COMiC_IfError COMiC_OrderedRedBlackTree_Finalize(
+        COMiC_In COMiC_OrderedRedBlackTree *self,
+        COMiC_Out COMiC_Error *error
+) noexcept
+{ return COMiC_RedBlackTree_Finalize((COMiC_RedBlackTree *) self, error); }
 
 static constexpr inline COMiC_Bool COMiC_OrderedRedBlackTree_IsEmpty(
         COMiC_In COMiC_OrderedRedBlackTree *self
@@ -99,23 +107,23 @@ static constexpr inline COMiC_OrderedRedBlackTree_Node *_COMiC_OrderedRedBlackTr
 { return (COMiC_OrderedRedBlackTree_Node *) (_COMiC_RedBlackTree_NextSubKey((COMiC_RedBlackTree *) tree, (COMiC_RedBlackTree_Node *) node)); }
 
 static constexpr inline void _COMiC_OrderedRedBlackTree_RotateLeft(
-        COMiC_In COMiC_OrderedRedBlackTree *self,
-        COMiC_In COMiC_OrderedRedBlackTree_Node **parent_child_p,
-        COMiC_In COMiC_OrderedRedBlackTree_Node *top
+        COMiC_InOut COMiC_OrderedRedBlackTree *self,
+        COMiC_InOut COMiC_OrderedRedBlackTree_Node **parent_child_p,
+        COMiC_InOut COMiC_OrderedRedBlackTree_Node *top
 ) noexcept
 { _COMiC_RedBlackTree_RotateLeft((COMiC_RedBlackTree *) self, (COMiC_RedBlackTree_Node **) parent_child_p, (COMiC_RedBlackTree_Node *) top); }
 
 static constexpr inline void _COMiC_OrderedRedBlackTree_RotateRight(
-        COMiC_In COMiC_OrderedRedBlackTree *self,
-        COMiC_In COMiC_OrderedRedBlackTree_Node **parent_child_p,
-        COMiC_In COMiC_OrderedRedBlackTree_Node *top
+        COMiC_InOut COMiC_OrderedRedBlackTree *self,
+        COMiC_InOut COMiC_OrderedRedBlackTree_Node **parent_child_p,
+        COMiC_InOut COMiC_OrderedRedBlackTree_Node *top
 ) noexcept
 { _COMiC_RedBlackTree_RotateRight((COMiC_RedBlackTree *) self, (COMiC_RedBlackTree_Node **) parent_child_p, (COMiC_RedBlackTree_Node *) top); }
 
 static constexpr inline COMiC_IfError COMiC_OrderedRedBlackTree_Link(
-        COMiC_In COMiC_OrderedRedBlackTree *self,
-        COMiC_In COMiC_OrderedRedBlackTree_Node *parent,
-        COMiC_In COMiC_OrderedRedBlackTree_Node **parent_child_p,
+        COMiC_InOut COMiC_OrderedRedBlackTree *self,
+        COMiC_InOut COMiC_OrderedRedBlackTree_Node *parent,
+        COMiC_InOut COMiC_OrderedRedBlackTree_Node **parent_child_p,
         COMiC_Out COMiC_OrderedRedBlackTree_Node *node
 ) noexcept
 {
@@ -141,7 +149,7 @@ static constexpr inline COMiC_IfError COMiC_OrderedRedBlackTree_Link(
 }
 
 static inline COMiC_IfError COMiC_OrderedRedBlackTree_UnLink(
-        COMiC_In COMiC_OrderedRedBlackTree *self,
+        COMiC_InOut COMiC_OrderedRedBlackTree *self,
         COMiC_In COMiC_OrderedRedBlackTree_Node *node
 ) noexcept
 {
@@ -162,11 +170,11 @@ static inline COMiC_IfError COMiC_OrderedRedBlackTree_UnLink(
 }
 
 static constexpr inline void _COMiC_OrderedRedBlackTree_LinkInsteadOf(
-        COMiC_OrderedRedBlackTree *tree,
-        COMiC_OrderedRedBlackTree_Node *parent,
-        COMiC_OrderedRedBlackTree_Node **parent_child_p,
-        COMiC_OrderedRedBlackTree_Node *node,
-        COMiC_OrderedRedBlackTree_Node *destination
+        COMiC_InOut COMiC_OrderedRedBlackTree *tree,
+        COMiC_InOut COMiC_OrderedRedBlackTree_Node *parent,
+        COMiC_InOut COMiC_OrderedRedBlackTree_Node **parent_child_p,
+        COMiC_InOut COMiC_OrderedRedBlackTree_Node *node,
+        COMiC_In COMiC_OrderedRedBlackTree_Node *destination
 )
 {
     _COMiC_RedBlackTree_LinkInsteadOf((COMiC_RedBlackTree *) tree, (COMiC_RedBlackTree_Node *) parent, (COMiC_RedBlackTree_Node **) parent_child_p, (COMiC_RedBlackTree_Node *) node, (COMiC_RedBlackTree_Node *) destination);
@@ -183,7 +191,7 @@ static constexpr inline void _COMiC_OrderedRedBlackTree_LinkInsteadOf(
 }
 
 # ifdef __cplusplus
-};
+}
 #endif
 
 #endif /* COMiC_Core_ORDERED_RB_TREE_H */

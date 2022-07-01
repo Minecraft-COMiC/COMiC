@@ -4,7 +4,9 @@
 # ifndef __cplusplus
 #  include <stdint.h>
 # else
+
 #  include <cstdint>
+
 # endif
 
 # ifndef __cplusplus
@@ -20,7 +22,7 @@
 
 typedef int COMiC_Bool;
 # define COMiC_FALSE (0)
-# define COMiC_TRUE (1)
+# define COMiC_TRUE (!COMiC_FALSE)
 
 typedef COMiC_Bool COMiC_IfError;
 # define COMiC_SUCCESS COMiC_FALSE
@@ -50,10 +52,13 @@ typedef enum COMiC_ComparisonResult
 
 # define COMiC_Constructor
 # define COMiC_Destructor
+# define COMiC_Reset COMiC_Destructor COMiC_Constructor
 
 # define COMiC_Optional(VALUE)
+# define COMiC_UnusedArg(ARGUMENT) ((void)(ARGUMENT))
 
 # define COMiC_In
+# define COMiC_InOut
 # define COMiC_Out
 
 #endif /* COMiC_Core_TYPES_H */

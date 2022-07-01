@@ -27,15 +27,30 @@ typedef struct COMiC_RedBlackTree
     COMiC_RedBlackTree_Node sentinel;
 } COMiC_RedBlackTree;
 
+COMiC_Constructor
 static constexpr inline COMiC_IfError COMiC_RedBlackTree_Init(
         COMiC_Out COMiC_RedBlackTree *self,
         COMiC_Out COMiC_Error *error
 ) noexcept
 {
+    COMiC_UnusedArg(error);
+
     self->sentinel.color = _COMiC_RedBlackTree_BLACK;
     self->sentinel.parent = &(self->sentinel);
     self->sentinel.left = NULL;
     self->sentinel.right = NULL;
+
+    return COMiC_SUCCESS;
+}
+
+COMiC_Destructor
+static constexpr inline COMiC_IfError COMiC_RedBlackTree_Finalize(
+        COMiC_In COMiC_RedBlackTree *self,
+        COMiC_Out COMiC_Error *error
+) noexcept
+{
+    COMiC_UnusedArg(self);
+    COMiC_UnusedArg(error);
 
     return COMiC_SUCCESS;
 }
@@ -77,7 +92,11 @@ static constexpr inline enum _COMiC_RedBlackTree_Color COMiC_RedBlackTree_Node_G
         COMiC_In COMiC_RedBlackTree_Node *self,
         COMiC_In COMiC_RedBlackTree *owner
 ) noexcept
-{ return self->color; }
+{
+    COMiC_UnusedArg(owner);
+
+    return self->color;
+}
 
 
 static constexpr inline COMiC_RedBlackTree_Node **_COMiC_RedBlackTree_CalcParentChildP(
@@ -114,9 +133,9 @@ static constexpr inline COMiC_RedBlackTree_Node *_COMiC_RedBlackTree_NextSubKey(
 }
 
 static constexpr inline void _COMiC_RedBlackTree_RotateLeft(
-        COMiC_In COMiC_RedBlackTree *self,
-        COMiC_In COMiC_RedBlackTree_Node **parent_child_p,
-        COMiC_In COMiC_RedBlackTree_Node *top
+        COMiC_InOut COMiC_RedBlackTree *self,
+        COMiC_InOut COMiC_RedBlackTree_Node **parent_child_p,
+        COMiC_InOut COMiC_RedBlackTree_Node *top
 ) noexcept
 {
     COMiC_RedBlackTree_Node *node = top->right;
@@ -134,9 +153,9 @@ static constexpr inline void _COMiC_RedBlackTree_RotateLeft(
 }
 
 static constexpr inline void _COMiC_RedBlackTree_RotateRight(
-        COMiC_In COMiC_RedBlackTree *self,
-        COMiC_In COMiC_RedBlackTree_Node **parent_child_p,
-        COMiC_In COMiC_RedBlackTree_Node *top
+        COMiC_InOut COMiC_RedBlackTree *self,
+        COMiC_InOut COMiC_RedBlackTree_Node **parent_child_p,
+        COMiC_InOut COMiC_RedBlackTree_Node *top
 ) noexcept
 {
     COMiC_RedBlackTree_Node *node = top->left;
@@ -154,9 +173,9 @@ static constexpr inline void _COMiC_RedBlackTree_RotateRight(
 }
 
 static constexpr inline COMiC_IfError COMiC_RedBlackTree_Link(
-        COMiC_In COMiC_RedBlackTree *self,
-        COMiC_In COMiC_RedBlackTree_Node *parent,
-        COMiC_In COMiC_RedBlackTree_Node **parent_child_p,
+        COMiC_InOut COMiC_RedBlackTree *self,
+        COMiC_InOut COMiC_RedBlackTree_Node *parent,
+        COMiC_InOut COMiC_RedBlackTree_Node **parent_child_p,
         COMiC_Out COMiC_RedBlackTree_Node *node
 ) noexcept
 {
@@ -227,7 +246,7 @@ static constexpr inline COMiC_IfError COMiC_RedBlackTree_Link(
 }
 
 static inline COMiC_IfError COMiC_RedBlackTree_UnLink(
-        COMiC_In COMiC_RedBlackTree *self,
+        COMiC_InOut COMiC_RedBlackTree *self,
         COMiC_In COMiC_RedBlackTree_Node *node
 ) noexcept
 {
@@ -299,8 +318,8 @@ static inline COMiC_IfError COMiC_RedBlackTree_UnLink(
     { goto NOT_BLACK; }
     node->color = pointer->color;
     pointer->color = _COMiC_RedBlackTree_BLACK;
-    BALANCE:
 
+    BALANCE:
     while ((fix_node_parent = fix_node->parent) != &(self->sentinel) && fix_node->color == _COMiC_RedBlackTree_BLACK)
     {
         if (fix_node == fix_node_parent->left)
@@ -380,13 +399,12 @@ static inline COMiC_IfError COMiC_RedBlackTree_UnLink(
     return COMiC_SUCCESS;
 }
 
-
 static constexpr inline void _COMiC_RedBlackTree_LinkInsteadOf(
-        COMiC_RedBlackTree *tree,
-        COMiC_RedBlackTree_Node *parent,
-        COMiC_RedBlackTree_Node **parent_child_p,
-        COMiC_RedBlackTree_Node *node,
-        COMiC_RedBlackTree_Node *destination
+        COMiC_InOut COMiC_RedBlackTree *tree,
+        COMiC_InOut COMiC_RedBlackTree_Node *parent,
+        COMiC_InOut COMiC_RedBlackTree_Node **parent_child_p,
+        COMiC_InOut COMiC_RedBlackTree_Node *node,
+        COMiC_In COMiC_RedBlackTree_Node *destination
 )
 {
     if (node == destination)
@@ -415,7 +433,7 @@ static constexpr inline void _COMiC_RedBlackTree_LinkInsteadOf(
 }
 
 # ifdef __cplusplus
-};
+}
 #endif
 
 #endif /* COMiC_Core_RB_TREE_H */
