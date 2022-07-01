@@ -51,8 +51,7 @@ inline COMiC_IfError COMiC_RedBlackTree_Link7Link(
         return COMiC_SUCCESS;
     }
 
-    if (COMiC_RedBlackTree_Link(tree, parent, parent_child_p, *node))
-    { return COMiC_ERROR; }
+    COMiC_RedBlackTree_Link(tree, parent, parent_child_p, *node);
     return COMiC_SUCCESS;
 }
 

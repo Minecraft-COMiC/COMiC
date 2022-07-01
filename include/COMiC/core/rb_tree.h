@@ -27,8 +27,7 @@ typedef struct COMiC_RedBlackTree
     COMiC_RedBlackTree_Node sentinel;
 } COMiC_RedBlackTree;
 
-COMiC_Constructor
-static constexpr inline void COMiC_RedBlackTree_Init(
+static constexpr inline void COMiC_RedBlackTree_Constructor(
         COMiC_Out COMiC_RedBlackTree *self
 ) noexcept
 {
@@ -38,8 +37,7 @@ static constexpr inline void COMiC_RedBlackTree_Init(
     self->sentinel.right = &(self->sentinel);
 }
 
-COMiC_Destructor
-static constexpr inline void COMiC_RedBlackTree_Finalize(
+static constexpr inline void COMiC_RedBlackTree_Destructor(
         COMiC_In COMiC_RedBlackTree *self
 ) noexcept
 {
@@ -428,8 +426,7 @@ typedef struct COMiC_RedBlackTree_SortedIterator
     COMiC_RedBlackTree_Node *pos;
 } COMiC_RedBlackTree_SortedIterator;
 
-COMiC_Constructor
-static constexpr inline void COMiC_RedBlackTree_SortedIterator_Init(
+static constexpr inline void COMiC_RedBlackTree_SortedIterator_Constructor(
         COMiC_Out COMiC_RedBlackTree_SortedIterator *self,
         COMiC_In COMiC_RedBlackTree *tree
 )
@@ -438,8 +435,7 @@ static constexpr inline void COMiC_RedBlackTree_SortedIterator_Init(
     self->pos = _COMiC_RedBlackTree_MinSubNode(tree, self->tree->sentinel.parent);
 }
 
-COMiC_Destructor
-static constexpr inline void COMiC_RedBlackTree_SortedIterator_Finalize(
+static constexpr inline void COMiC_RedBlackTree_SortedIterator_Destructor(
         COMiC_In COMiC_RedBlackTree_SortedIterator *self
 )
 {
@@ -469,8 +465,7 @@ typedef struct COMiC_RedBlackTree_ReversedSortedIterator
     COMiC_RedBlackTree_Node *pos;
 } COMiC_RedBlackTree_ReversedSortedIterator;
 
-COMiC_Constructor
-static constexpr inline void COMiC_RedBlackTree_ReversedSortedIterator_Init(
+static constexpr inline void COMiC_RedBlackTree_ReversedSortedIterator_Constructor(
         COMiC_Out COMiC_RedBlackTree_ReversedSortedIterator *self,
         COMiC_In COMiC_RedBlackTree *tree
 )
@@ -479,8 +474,7 @@ static constexpr inline void COMiC_RedBlackTree_ReversedSortedIterator_Init(
     self->pos = _COMiC_RedBlackTree_MaxSubNode(tree, self->tree->sentinel.parent);
 }
 
-COMiC_Destructor
-static constexpr inline void COMiC_RedBlackTree_ReversedSortedIterator_Finalize(
+static constexpr inline void COMiC_RedBlackTree_ReversedSortedIterator_Destructor(
         COMiC_In COMiC_RedBlackTree_ReversedSortedIterator *self
 )
 {
@@ -544,8 +538,7 @@ typedef struct COMiC_RedBlackTree_FastFreeIterator
 } COMiC_RedBlackTree_FastFreeIterator;
 
 
-COMiC_Constructor
-static constexpr inline void COMiC_RedBlackTree_FastFreeIterator_Init(
+static constexpr inline void COMiC_RedBlackTree_FastFreeIterator_Constructor(
         COMiC_Out COMiC_RedBlackTree_FastFreeIterator *self,
         COMiC_In COMiC_RedBlackTree *tree
 )
@@ -554,8 +547,7 @@ static constexpr inline void COMiC_RedBlackTree_FastFreeIterator_Init(
     self->pos = _COMiC_RedBlackTree_DeepestLeftSubNode(tree, self->tree->sentinel.parent);
 }
 
-COMiC_Destructor
-static constexpr inline void COMiC_RedBlackTree_FastFreeIterator_Finalize(
+static constexpr inline void COMiC_RedBlackTree_FastFreeIterator_Destructor(
         COMiC_In COMiC_RedBlackTree_FastFreeIterator *self
 )
 {

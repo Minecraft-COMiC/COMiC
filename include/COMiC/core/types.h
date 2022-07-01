@@ -50,10 +50,6 @@ typedef enum COMiC_ComparisonResult
     COMiC_GREATER = 1,
 } COMiC_ComparisonResult;
 
-# define COMiC_Constructor
-# define COMiC_Destructor
-# define COMiC_Reset COMiC_Destructor COMiC_Constructor
-
 # define COMiC_Optional(VALUE)
 # define COMiC_UnusedArg(ARGUMENT) ((void)(ARGUMENT))
 

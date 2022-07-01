@@ -33,8 +33,7 @@ inline COMiC_IfError COMiC_OrderedRedBlackTree_Find7Link(
         return COMiC_SUCCESS;
     }
 
-    if (COMiC_OrderedRedBlackTree_Link(tree, parent, parent_child_p, *node))
-    { return COMiC_ERROR; }
+    COMiC_OrderedRedBlackTree_Link(tree, parent, parent_child_p, *node);
     return COMiC_SUCCESS;
 }
 
