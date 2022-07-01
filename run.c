@@ -1,3 +1,5 @@
+#include <COMiC/core/ordered_rb_tree.h>
+
 #include <stdio.h>
 
 #include <COMiC.h>

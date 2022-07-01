@@ -1,4 +1,5 @@
 #include <COMiC/core/rb_tree.hpp>
+#include <COMiC/core/ordered_rb_tree.hpp>
 #include <iostream>
 #include <map>
 #include <cstdlib>
@@ -40,17 +41,17 @@ int main()
     clock_t t = clock();
     my_func();
     static COMiC_RedBlackTree_Node nodes[arr_size];
-#if 0
+#if 1
     std::map<COMiC_RedBlackTree_Node *, int> tree;
 
     for (int i = 0; i < arr_size; i++)
     {
         tree.insert({&(nodes[i]), i});
     }
-    for (int i = 0; i < arr_size; i++)
-    {
-        tree.erase(&(nodes[i]));
-    }
+//    for (int i = 0; i < arr_size; i++)
+//    {
+//        tree.erase(&(nodes[i]));
+//    }
 #else
     COMiC_RedBlackTree tree;
     COMiC_RedBlackTree_Init(&tree, nullptr);
@@ -61,10 +62,10 @@ int main()
         p = &(nodes[i]);
         COMiC_RedBlackTree_Link<key>(&tree, key(p), &p);
     }
-    for (int i = 0; i < arr_size; i++)
-    {
-        COMiC_RedBlackTree_UnLink(&tree, &(nodes[i]));
-    }
+//    for (int i = 0; i < arr_size; i++)
+//    {
+//        COMiC_RedBlackTree_UnLink(&tree, &(nodes[i]));
+//    }
 #endif
     std::cout << ((long double) (clock() - t)) / CLOCKS_PER_SEC << std::endl;
     int a = 1;
