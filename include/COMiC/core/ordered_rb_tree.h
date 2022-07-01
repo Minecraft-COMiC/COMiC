@@ -26,26 +26,20 @@ typedef struct COMiC_OrderedRedBlackTree
 } COMiC_OrderedRedBlackTree;
 
 COMiC_Constructor
-static constexpr inline COMiC_IfError COMiC_OrderedRedBlackTree_Init(
-        COMiC_Out COMiC_OrderedRedBlackTree *self,
-        COMiC_Out COMiC_Error *error
+static constexpr inline void COMiC_OrderedRedBlackTree_Init(
+        COMiC_Out COMiC_OrderedRedBlackTree *self
 ) noexcept
 {
-    if (COMiC_RedBlackTree_Init((COMiC_RedBlackTree *) self, error))
-    { return COMiC_ERROR; }
-
+    COMiC_RedBlackTree_Init(&(self->tree));
     self->first = NULL;
     self->last = NULL;
-
-    return COMiC_SUCCESS;
 }
 
 COMiC_Destructor
-static constexpr inline COMiC_IfError COMiC_OrderedRedBlackTree_Finalize(
-        COMiC_In COMiC_OrderedRedBlackTree *self,
-        COMiC_Out COMiC_Error *error
+static constexpr inline void COMiC_OrderedRedBlackTree_Finalize(
+        COMiC_In COMiC_OrderedRedBlackTree *self
 ) noexcept
-{ return COMiC_RedBlackTree_Finalize((COMiC_RedBlackTree *) self, error); }
+{ COMiC_RedBlackTree_Finalize((COMiC_RedBlackTree *) self); }
 
 static constexpr inline COMiC_Bool COMiC_OrderedRedBlackTree_IsEmpty(
         COMiC_In COMiC_OrderedRedBlackTree *self
@@ -94,17 +88,17 @@ static constexpr inline COMiC_OrderedRedBlackTree_Node **_COMiC_OrderedRedBlackT
 )
 { return (COMiC_OrderedRedBlackTree_Node **) (_COMiC_RedBlackTree_CalcParentChildP((COMiC_RedBlackTree *) tree, (COMiC_RedBlackTree_Node *) node)); }
 
-static constexpr inline COMiC_OrderedRedBlackTree_Node *_COMiC_OrderedRedBlackTree_PrevSubKey(
+static constexpr inline COMiC_OrderedRedBlackTree_Node *_COMiC_OrderedRedBlackTree_MaxSubNode(
         COMiC_In COMiC_OrderedRedBlackTree *tree,
         COMiC_In COMiC_OrderedRedBlackTree_Node *node
 )
-{ return (COMiC_OrderedRedBlackTree_Node *) (_COMiC_RedBlackTree_PrevSubKey((COMiC_RedBlackTree *) tree, (COMiC_RedBlackTree_Node *) node)); }
+{ return (COMiC_OrderedRedBlackTree_Node *) (_COMiC_RedBlackTree_MaxSubNode((COMiC_RedBlackTree *) tree, (COMiC_RedBlackTree_Node *) node)); }
 
-static constexpr inline COMiC_OrderedRedBlackTree_Node *_COMiC_OrderedRedBlackTree_NextSubKey(
+static constexpr inline COMiC_OrderedRedBlackTree_Node *_COMiC_OrderedRedBlackTree_MinSubNode(
         COMiC_In COMiC_OrderedRedBlackTree *tree,
         COMiC_In COMiC_OrderedRedBlackTree_Node *node
 )
-{ return (COMiC_OrderedRedBlackTree_Node *) (_COMiC_RedBlackTree_NextSubKey((COMiC_RedBlackTree *) tree, (COMiC_RedBlackTree_Node *) node)); }
+{ return (COMiC_OrderedRedBlackTree_Node *) (_COMiC_RedBlackTree_MinSubNode((COMiC_RedBlackTree *) tree, (COMiC_RedBlackTree_Node *) node)); }
 
 static constexpr inline void _COMiC_OrderedRedBlackTree_RotateLeft(
         COMiC_InOut COMiC_OrderedRedBlackTree *self,
@@ -120,7 +114,7 @@ static constexpr inline void _COMiC_OrderedRedBlackTree_RotateRight(
 ) noexcept
 { _COMiC_RedBlackTree_RotateRight((COMiC_RedBlackTree *) self, (COMiC_RedBlackTree_Node **) parent_child_p, (COMiC_RedBlackTree_Node *) top); }
 
-static constexpr inline COMiC_IfError COMiC_OrderedRedBlackTree_Link(
+static constexpr inline void COMiC_OrderedRedBlackTree_Link(
         COMiC_InOut COMiC_OrderedRedBlackTree *self,
         COMiC_InOut COMiC_OrderedRedBlackTree_Node *parent,
         COMiC_InOut COMiC_OrderedRedBlackTree_Node **parent_child_p,
@@ -140,7 +134,7 @@ static constexpr inline COMiC_IfError COMiC_OrderedRedBlackTree_Link(
         self->last = node;
     }
 
-    return COMiC_RedBlackTree_Link(
+    COMiC_RedBlackTree_Link(
             (COMiC_RedBlackTree *) self,
             (COMiC_RedBlackTree_Node *) parent,
             (COMiC_RedBlackTree_Node **) parent_child_p,
@@ -148,7 +142,7 @@ static constexpr inline COMiC_IfError COMiC_OrderedRedBlackTree_Link(
     );
 }
 
-static inline COMiC_IfError COMiC_OrderedRedBlackTree_UnLink(
+static inline void COMiC_OrderedRedBlackTree_UnLink(
         COMiC_InOut COMiC_OrderedRedBlackTree *self,
         COMiC_In COMiC_OrderedRedBlackTree_Node *node
 ) noexcept
@@ -163,7 +157,7 @@ static inline COMiC_IfError COMiC_OrderedRedBlackTree_UnLink(
     else
     { self->last = node->prev; }
 
-    return COMiC_RedBlackTree_UnLink(
+    COMiC_RedBlackTree_UnLink(
             (COMiC_RedBlackTree *) self,
             (COMiC_RedBlackTree_Node *) node
     );
@@ -189,6 +183,163 @@ static constexpr inline void _COMiC_OrderedRedBlackTree_LinkInsteadOf(
     else
     { node->next->prev = node; }
 }
+
+typedef struct COMiC_OrderedRedBlackTree_SortedIterator
+{
+    COMiC_RedBlackTree_SortedIterator sorted_iterator;
+} COMiC_OrderedRedBlackTree_SortedIterator;
+
+COMiC_Constructor
+static constexpr inline void COMiC_OrderedRedBlackTree_SortedIterator_Init(
+        COMiC_Out COMiC_OrderedRedBlackTree_SortedIterator *self,
+        COMiC_In COMiC_OrderedRedBlackTree *tree
+)
+{ COMiC_RedBlackTree_SortedIterator_Init(&(self->sorted_iterator), &(tree->tree)); }
+
+COMiC_Destructor
+static constexpr inline void COMiC_OrderedRedBlackTree_SortedIterator_Finalize(
+        COMiC_In COMiC_OrderedRedBlackTree_SortedIterator *self
+)
+{ return COMiC_RedBlackTree_SortedIterator_Finalize(&(self->sorted_iterator)); }
+
+
+static constexpr inline void COMiC_OrderedRedBlackTree_SortedIterator_Next(
+        COMiC_InOut COMiC_OrderedRedBlackTree_SortedIterator *self,
+        COMiC_Out COMiC_OrderedRedBlackTree_Node **pos
+)
+{ COMiC_RedBlackTree_SortedIterator_Next(&(self->sorted_iterator), (COMiC_RedBlackTree_Node **) pos); }
+
+typedef struct COMiC_OrderedRedBlackTree_ReversedSortedIterator
+{
+    COMiC_RedBlackTree_ReversedSortedIterator reversed_sorted_iterator;
+} COMiC_OrderedRedBlackTree_ReversedSortedIterator;
+
+COMiC_Constructor
+static constexpr inline void COMiC_OrderedRedBlackTree_ReversedSortedIterator_Init(
+        COMiC_Out COMiC_OrderedRedBlackTree_ReversedSortedIterator *self,
+        COMiC_In COMiC_OrderedRedBlackTree *tree
+)
+{ COMiC_RedBlackTree_ReversedSortedIterator_Init(&(self->reversed_sorted_iterator), &(tree->tree)); }
+
+COMiC_Destructor
+static constexpr inline void COMiC_OrderedRedBlackTree_ReversedSortedIterator_Finalize(
+        COMiC_In COMiC_OrderedRedBlackTree_ReversedSortedIterator *self
+)
+{ COMiC_RedBlackTree_ReversedSortedIterator_Finalize(&(self->reversed_sorted_iterator)); }
+
+
+static constexpr inline void COMiC_OrderedRedBlackTree_ReversedSortedIterator_Next(
+        COMiC_InOut COMiC_OrderedRedBlackTree_ReversedSortedIterator *self,
+        COMiC_Out COMiC_OrderedRedBlackTree_Node **pos
+)
+{ COMiC_RedBlackTree_ReversedSortedIterator_Next(&(self->reversed_sorted_iterator), (COMiC_RedBlackTree_Node **) pos); }
+
+
+static constexpr inline COMiC_OrderedRedBlackTree_Node *_COMiC_OrderedRedBlackTree_DeepestLeftSubNode(
+        COMiC_In COMiC_OrderedRedBlackTree *tree,
+        COMiC_In COMiC_OrderedRedBlackTree_Node *node
+)
+{ return (COMiC_OrderedRedBlackTree_Node *) (_COMiC_RedBlackTree_DeepestLeftSubNode(&(tree->tree), &(node->node))); }
+
+static constexpr inline COMiC_OrderedRedBlackTree_Node *_COMiC_OrderedRedBlackTree_DeepestRightSubNode(
+        COMiC_In COMiC_OrderedRedBlackTree *tree,
+        COMiC_In COMiC_OrderedRedBlackTree_Node *node
+)
+{ return (COMiC_OrderedRedBlackTree_Node *) (_COMiC_RedBlackTree_DeepestRightSubNode(&(tree->tree), &(node->node))); }
+
+typedef struct COMiC_OrderedRedBlackTree_OrderedIterator
+{
+    COMiC_OrderedRedBlackTree_Node *pos;
+} COMiC_OrderedRedBlackTree_OrderedIterator;
+
+
+COMiC_Constructor
+static constexpr inline void COMiC_OrderedRedBlackTree_OrderedIterator_Init(
+        COMiC_Out COMiC_OrderedRedBlackTree_OrderedIterator *self,
+        COMiC_In COMiC_OrderedRedBlackTree *tree
+)
+{
+    self->pos = tree->first;
+}
+
+COMiC_Destructor
+static constexpr inline void COMiC_OrderedRedBlackTree_OrderedIterator_Finalize(
+        COMiC_In COMiC_OrderedRedBlackTree_OrderedIterator *self
+)
+{
+    COMiC_UnusedArg(self);
+}
+
+static constexpr inline void COMiC_OrderedRedBlackTree_OrderedIterator_Next(
+        COMiC_InOut COMiC_OrderedRedBlackTree_OrderedIterator *self,
+        COMiC_Out COMiC_OrderedRedBlackTree_Node **pos
+)
+{
+    *pos = self->pos;
+
+    if (self->pos != NULL)
+    { self->pos = self->pos->next; }
+}
+
+typedef struct COMiC_OrderedRedBlackTree_ReversedOrderedIterator
+{
+    COMiC_OrderedRedBlackTree_Node *pos;
+} COMiC_OrderedRedBlackTree_ReversedOrderedIterator;
+
+
+COMiC_Constructor
+static constexpr inline void COMiC_OrderedRedBlackTree_ReversedOrderedIterator_Init(
+        COMiC_Out COMiC_OrderedRedBlackTree_ReversedOrderedIterator *self,
+        COMiC_In COMiC_OrderedRedBlackTree *tree
+)
+{
+    self->pos = tree->last;
+}
+
+COMiC_Destructor
+static constexpr inline void COMiC_OrderedRedBlackTree_ReversedOrderedIterator_Finalize(
+        COMiC_In COMiC_OrderedRedBlackTree_ReversedOrderedIterator *self
+)
+{
+    COMiC_UnusedArg(self);
+}
+
+static constexpr inline void COMiC_OrderedRedBlackTree_ReversedOrderedIterator_Next(
+        COMiC_InOut COMiC_OrderedRedBlackTree_ReversedOrderedIterator *self,
+        COMiC_Out COMiC_OrderedRedBlackTree_Node **pos
+)
+{
+    *pos = self->pos;
+
+    if (self->pos != NULL)
+    { self->pos = self->pos->prev; }
+}
+
+typedef struct COMiC_OrderedRedBlackTree_FastFreeIterator
+{
+    COMiC_OrderedRedBlackTree_OrderedIterator ordered_iterator;
+} COMiC_OrderedRedBlackTree_FastFreeIterator;
+
+
+COMiC_Constructor
+static constexpr inline void COMiC_OrderedRedBlackTree_FastFreeIterator_Init(
+        COMiC_Out COMiC_OrderedRedBlackTree_FastFreeIterator *self,
+        COMiC_In COMiC_OrderedRedBlackTree *tree
+)
+{ COMiC_OrderedRedBlackTree_OrderedIterator_Init(&(self->ordered_iterator), tree); }
+
+COMiC_Destructor
+static constexpr inline void COMiC_OrderedRedBlackTree_FastFreeIterator_Finalize(
+        COMiC_In COMiC_OrderedRedBlackTree_FastFreeIterator *self
+)
+{ COMiC_OrderedRedBlackTree_OrderedIterator_Finalize(&(self->ordered_iterator)); }
+
+
+static constexpr inline void COMiC_OrderedRedBlackTree_FastFreeIterator_Next(
+        COMiC_InOut COMiC_OrderedRedBlackTree_FastFreeIterator *self,
+        COMiC_Out COMiC_OrderedRedBlackTree_Node **node
+)
+{ COMiC_OrderedRedBlackTree_OrderedIterator_Next(&(self->ordered_iterator), node); }
 
 # ifdef __cplusplus
 }
