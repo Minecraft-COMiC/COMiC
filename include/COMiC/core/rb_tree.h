@@ -503,7 +503,7 @@ static constexpr inline COMiC_RedBlackTree_Node *_COMiC_RedBlackTree_DeepestLeft
         COMiC_In COMiC_RedBlackTree_Node *node
 )
 {
-    while (true)
+    while (1)
     {
         if (node->left != &(tree->sentinel))
         { node = node->left; }
@@ -519,7 +519,7 @@ static constexpr inline COMiC_RedBlackTree_Node *_COMiC_RedBlackTree_DeepestRigh
         COMiC_In COMiC_RedBlackTree_Node *node
 )
 {
-    while (true)
+    while (1)
     {
         if (node->right != &(tree->sentinel))
         { node = node->right; }

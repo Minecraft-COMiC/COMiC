@@ -32,7 +32,7 @@ inline COMiC_IfError _COMiC_RedBlackTree_Find(
 }
 
 template<class key_wrapper_t>
-inline COMiC_IfError COMiC_RedBlackTree_Link7Link(
+inline COMiC_IfError COMiC_RedBlackTree_Find7Link(
         COMiC_InOut COMiC_RedBlackTree *tree,
         COMiC_In key_wrapper_t key,
         COMiC_InOut COMiC_RedBlackTree_Node **node

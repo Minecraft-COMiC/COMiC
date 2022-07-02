@@ -20,13 +20,6 @@
 #  endif
 # endif
 
-typedef int COMiC_Bool;
-# define COMiC_FALSE (0)
-# define COMiC_TRUE (!COMiC_FALSE)
-
-typedef COMiC_Bool COMiC_IfError;
-# define COMiC_SUCCESS COMiC_FALSE
-# define COMiC_ERROR COMiC_TRUE
 
 typedef size_t COMiC_USize;
 typedef uintptr_t COMiC_UIntPtr;
@@ -42,6 +35,15 @@ typedef uint8_t COMiC_Byte;
 typedef uint16_t COMiC_Word;
 typedef uint32_t COMiC_DWord;
 typedef uint64_t COMiC_QWord;
+typedef unsigned int COMiC_FastestNumber;
+
+typedef COMiC_FastestNumber COMiC_Bool;
+# define COMiC_FALSE (0)
+# define COMiC_TRUE (!COMiC_FALSE)
+
+typedef COMiC_Bool COMiC_IfError;
+# define COMiC_SUCCESS COMiC_FALSE
+# define COMiC_ERROR COMiC_TRUE
 
 typedef enum COMiC_ComparisonResult
 {

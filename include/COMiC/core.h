@@ -13,5 +13,7 @@ extern "C" {
 # include "core/error.h"
 # include "core/os.h"
 # include "core/rb_tree.h"
+# include "core/ordered_rb_tree.h"
+# include "core/arena.h"
 
 #endif /* COMiC_CORE_H */
