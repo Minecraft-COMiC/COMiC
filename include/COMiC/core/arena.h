@@ -85,6 +85,52 @@ static constexpr inline COMiC_Bool _COMiC_Arena_Buffer_FindEmptyCell(
     return COMiC_FALSE;
 }
 
+static constexpr inline void COMiC_Arena_Constructor(
+        COMiC_Out COMiC_Arena *self
+) noexcept
+{
+    self->last = NULL;
+}
+
+static constexpr inline COMiC_IfError COMiC_Arena_Destructor(
+        COMiC_In COMiC_Arena *self,
+        COMiC_Out COMiC_Error *error
+) noexcept
+{
+    struct _COMiC_Arena_BufferHead *p;
+    while ((p = self->last) != NULL)
+    {
+        self->last = self->last->next;
+        if (COMiC_NativeDeallocOnPages(error, (void *) p))
+        { return COMiC_ERROR; }
+    }
+
+    return COMiC_SUCCESS;
+}
+
+
+typedef struct COMiC_Arena_FastFreeIterator
+{
+    struct _COMiC_Arena_BufferHead *buffer;
+    COMiC_USize index;
+} COMiC_Arena_FastFreeIterator;
+
+static constexpr inline void COMiC_Arena_FastFreeIterator_Constructor(
+        COMiC_Out COMiC_Arena_FastFreeIterator *self,
+        COMiC_In COMiC_Arena *arena
+) noexcept
+{
+    self->buffer = arena->last;
+    self->index = self->buffer->capacity;
+}
+
+static constexpr inline void COMiC_Arena_FastFreeIterator_Destructor(
+        COMiC_In COMiC_Arena_FastFreeIterator *self
+) noexcept {
+    COMiC_UnusedArg(self);
+}
+
+
 # ifdef __cplusplus
 }
 # endif
