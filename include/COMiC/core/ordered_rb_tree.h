@@ -227,7 +227,6 @@ typedef struct COMiC_OrderedRedBlackTree_OrderedIterator
     COMiC_DoublyLinkedList_Iterator list_iterator;
 } COMiC_OrderedRedBlackTree_OrderedIterator;
 
-
 static constexpr inline void COMiC_OrderedRedBlackTree_OrderedIterator_Constructor(
         COMiC_Out COMiC_OrderedRedBlackTree_OrderedIterator *self,
         COMiC_In COMiC_OrderedRedBlackTree *tree
@@ -239,7 +238,6 @@ static constexpr inline void COMiC_OrderedRedBlackTree_OrderedIterator_Destructo
         COMiC_In COMiC_OrderedRedBlackTree_OrderedIterator *self
 )
 { COMiC_DoublyLinkedList_Iterator_Destructor(&(self->list_iterator)); }
-
 
 static inline void COMiC_OrderedRedBlackTree_OrderedIterator_Next(
         COMiC_InOut COMiC_OrderedRedBlackTree_OrderedIterator *self,
@@ -255,19 +253,16 @@ typedef struct COMiC_OrderedRedBlackTree_ReversedOrderedIterator
     COMiC_DoublyLinkedList_ReversedIterator list_iterator;
 } COMiC_OrderedRedBlackTree_ReversedOrderedIterator;
 
-
 static constexpr inline void COMiC_OrderedRedBlackTree_ReversedOrderedIterator_Constructor(
         COMiC_Out COMiC_OrderedRedBlackTree_ReversedOrderedIterator *self,
         COMiC_In COMiC_OrderedRedBlackTree *tree
 )
 { COMiC_DoublyLinkedList_ReversedIterator_Constructor(&(self->list_iterator), &(tree->list)); }
 
-
 static constexpr inline void COMiC_OrderedRedBlackTree_ReversedOrderedIterator_Destructor(
         COMiC_In COMiC_OrderedRedBlackTree_ReversedOrderedIterator *self
 )
 { COMiC_DoublyLinkedList_ReversedIterator_Destructor(&(self->list_iterator)); }
-
 
 static inline void COMiC_OrderedRedBlackTree_ReversedOrderedIterator_Next(
         COMiC_InOut COMiC_OrderedRedBlackTree_ReversedOrderedIterator *self,
@@ -278,12 +273,10 @@ static inline void COMiC_OrderedRedBlackTree_ReversedOrderedIterator_Next(
     *pos = (COMiC_OrderedRedBlackTree_Node *) (((COMiC_UIntPtr) pos) - offsetof(COMiC_OrderedRedBlackTree_Node, list_node));
 }
 
-
 typedef struct COMiC_OrderedRedBlackTree_FastFreeIterator
 {
     COMiC_OrderedRedBlackTree_OrderedIterator ordered_iterator;
 } COMiC_OrderedRedBlackTree_FastFreeIterator;
-
 
 static constexpr inline void COMiC_OrderedRedBlackTree_FastFreeIterator_Constructor(
         COMiC_Out COMiC_OrderedRedBlackTree_FastFreeIterator *self,

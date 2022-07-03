@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <varargs.h>
 
@@ -39,9 +40,9 @@ COMiC_IfError COMiC_Error_FormatMessage(
         COMiC_In ...
 ) noexcept {
     va_list varargs;
-    va_start(varargs, format);
+            va_start(varargs, format);
     int message_size_i = vsnprintf(NULL, 0, format, varargs);
-    va_end(varargs);
+            va_end(varargs);
 
     if (message_size_i < 0)
     {
@@ -57,17 +58,31 @@ COMiC_IfError COMiC_Error_FormatMessage(
     ))
     { return COMiC_ERROR; }
 
-    if (extra_data!= NULL)
-    { *extra_data = (void *)(((COMiC_USize)formatted_string) + message_size); }
+    if (extra_data != NULL)
+    { *extra_data = (void *) (((COMiC_USize) formatted_string) + message_size); }
 
-    va_start(varargs, format);
-    if (vsnprintf(*formatted_string, message_size, format, varargs) < 0){
-        va_end(varargs);
+            va_start(varargs, format);
+    if (vsnprintf(*formatted_string, message_size, format, varargs) < 0)
+    {
+                va_end(varargs);
 
         // todo
         return COMiC_ERROR;
     }
-    va_end(varargs);
+            va_end(varargs);
 
     return COMiC_SUCCESS;
 }
+
+void COMiC_Error_PrintTopLevel_StdLibPuts(
+        COMiC_InOut void *closure,
+        COMiC_In char const *text
+) noexcept
+{ fputs(text, (FILE *) closure); }
+
+int COMiC_Error_PrintTopLevel(
+        COMiC_In void (*print_func)(void *, char const *),
+        COMiC_InOut void *print_func_data,
+        COMiC_In COMiC_Error *error
+) noexcept
+{ return EXIT_FAILURE; }

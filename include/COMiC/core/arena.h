@@ -2,6 +2,7 @@
 # define COMiC_Core_ARENA_H
 
 # include "types.h"
+# include "error.h"
 
 # ifdef __cplusplus
 extern "C" {

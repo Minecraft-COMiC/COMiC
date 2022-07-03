@@ -41,7 +41,7 @@ add_library(
         # ./src/chunk_extra_buffer.cpp
         # ./src/validate_version.cpp
         # ./src/validate_type_sizes.cpp
-)
+        src/test.c)
 
 
 set_target_properties(core PROPERTIES LINKER_LANGUAGE C)
@@ -58,3 +58,5 @@ install(
         DIRECTORY ./include
         DESTINATION ./
 )
+
+add_subdirectory(test)

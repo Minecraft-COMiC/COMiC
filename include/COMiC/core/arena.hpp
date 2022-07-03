@@ -2,6 +2,7 @@
 # define COMiC_Core_ARENA_HPP
 
 # include "types.h"
+# include "error.h"
 # include "arena.h"
 # include "os.h"
 

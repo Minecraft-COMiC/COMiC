@@ -65,6 +65,16 @@ static constexpr inline COMiC_Bool COMiC_Error_IsSet(
 ) noexcept
 { return self->cls != NULL; }
 
+void COMiC_Error_PrintTopLevel_StdLibPuts(
+        COMiC_InOut void *closure,
+        COMiC_In char const *text
+) noexcept;
+
+int COMiC_Error_PrintTopLevel(
+        COMiC_In void (*print_func)(void *, char const *),
+        COMiC_InOut void *print_func_data,
+        COMiC_In COMiC_Error *error
+) noexcept;
 
 # ifdef __cplusplus
 };
