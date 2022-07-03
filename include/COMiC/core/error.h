@@ -13,7 +13,8 @@ typedef COMiC_IfError (*const COMiC_ErrorClass_DestructorFunc)(COMiC_Error *self
 
 typedef struct COMiC_ErrorClass
 {
-    struct COMiC_ErrorClass const *const base_classes;
+    char const *const name;
+    struct COMiC_ErrorClass const *const *const base_classes;
     const COMiC_USize extra_info_size;
     const COMiC_ErrorClass_DestructorFunc destructor;
 } COMiC_ErrorClass;
@@ -21,8 +22,8 @@ typedef struct COMiC_ErrorClass
 struct COMiC_Error
 {
     COMiC_ErrorClass const *cls;
-    char const *message;
-    void const *extra_data;
+    char *message;
+    void *extra_data;
 };
 
 COMiC_IfError COMiC_ErrorHeap_Alloc(

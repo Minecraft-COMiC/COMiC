@@ -46,7 +46,8 @@ COMiC_IfError COMiC_OS_Lock_Acquire(
 
 COMiC_IfError COMiC_OS_Lock_TryAcquire(
         COMiC_In COMiC_OS_Lock *self,
-        COMiC_Out COMiC_Error *error
+        COMiC_Out COMiC_Error *error,
+        COMiC_Out COMiC_Bool *is_locked
 ) noexcept;
 
 COMiC_IfError COMiC_OS_Lock_Release(
