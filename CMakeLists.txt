@@ -30,7 +30,8 @@ add_library(
         $<TARGET_OBJECTS:COMiC::OS>
 
         # ./src/application.c
-        ./src/error.c
+        src/error.c
+        src/error.cpp
         # ./src/single_buffer.c
         # ./src/global_heap.c
         # ./src/rb_tree.c

@@ -8,10 +8,10 @@
 extern "C" {
 # endif
 
-COMiC_Constructor
+
 void COMiC_OS_Windows_FormatErrorMessage(
         COMiC_Out COMiC_Error *self,
-        COMiC_In COMiC_ErrNo err_no
+//        COMiC_In COMiC_ErrNo err_no
 );
 
 # ifdef __cplusplus

@@ -171,7 +171,7 @@ static constexpr inline void COMiC_OrderedRedBlackTree_SortedIterator_Constructo
 static constexpr inline void COMiC_OrderedRedBlackTree_SortedIterator_Destructor(
         COMiC_In COMiC_OrderedRedBlackTree_SortedIterator *self
 )
-{ return COMiC_RedBlackTree_SortedIterator_Destructor(&(self->sorted_iterator)); }
+{ COMiC_RedBlackTree_SortedIterator_Destructor(&(self->sorted_iterator)); }
 
 
 static inline void COMiC_OrderedRedBlackTree_SortedIterator_Next(
@@ -296,7 +296,7 @@ static constexpr inline void COMiC_OrderedRedBlackTree_FastFreeIterator_Destruct
 )
 { COMiC_OrderedRedBlackTree_OrderedIterator_Destructor(&(self->ordered_iterator)); }
 
-static constexpr inline void COMiC_OrderedRedBlackTree_FastFreeIterator_Next(
+static inline void COMiC_OrderedRedBlackTree_FastFreeIterator_Next(
         COMiC_InOut COMiC_OrderedRedBlackTree_FastFreeIterator *self,
         COMiC_Out COMiC_OrderedRedBlackTree_Node **node
 )

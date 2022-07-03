@@ -70,7 +70,7 @@ static inline COMiC_IfError COMiC_Arena_Alloc(
         _COMiC_Arena_Buffer_SetOccupancy(_COMiC_Arena_Buffer_GetOccupancyInfo(b), index, COMiC_TRUE);
         b->used++;
 
-        void *n = (((COMiC_UIntPtr) _COMiC_Arena_Buffer_GetData(b)) + (sizeof(_COMiC_Arena_NodeHead) + elem_size) * index);
+        void *n = (void *) (((COMiC_UIntPtr) _COMiC_Arena_Buffer_GetData(b)) + (sizeof(_COMiC_Arena_NodeHead) + elem_size) * index);
         ((_COMiC_Arena_NodeHead *) n)->owner = b;
 
         *pointer = (elem_t *) (((COMiC_UIntPtr) n) + sizeof(_COMiC_Arena_NodeHead));
@@ -86,7 +86,7 @@ static inline COMiC_IfError COMiC_Arena_Alloc(
 
     if (COMiC_NativeAllocOnPages(
             error,
-            &(self->last),
+            (void **) &(self->last),
             _COMiC_Arena_Buffer_CalcOptimalCapacity<elem_size>(&(new_buffer.capacity))
     ))
     { return COMiC_ERROR; }

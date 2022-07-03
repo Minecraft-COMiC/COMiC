@@ -63,7 +63,7 @@ static constexpr inline void _COMiC_Arena_Buffer_SetOccupancy(
     { (((COMiC_FastestNumber *) occupancy_info)[pos / (sizeof(COMiC_FastestNumber) * 8)]) &= ~(((COMiC_FastestNumber) 1) << (pos % (sizeof(COMiC_FastestNumber) * 8))); }
 }
 
-static constexpr inline COMiC_Bool _COMiC_Arena_Buffer_FindEmptyCell(
+static inline COMiC_Bool _COMiC_Arena_Buffer_FindEmptyCell(
         COMiC_In struct _COMiC_Arena_BufferHead *self,
         COMiC_Out COMiC_USize *index
 ) noexcept {
@@ -92,7 +92,7 @@ static constexpr inline void COMiC_Arena_Constructor(
     self->last = NULL;
 }
 
-static constexpr inline COMiC_IfError COMiC_Arena_Destructor(
+static inline COMiC_IfError COMiC_Arena_Destructor(
         COMiC_In COMiC_Arena *self,
         COMiC_Out COMiC_Error *error
 ) noexcept
@@ -101,7 +101,7 @@ static constexpr inline COMiC_IfError COMiC_Arena_Destructor(
     while ((p = self->last) != NULL)
     {
         self->last = self->last->next;
-        if (COMiC_NativeDeallocOnPages(error, (void *) p))
+        if (COMiC_NativeDeAllocOnPages(error, (void *) p))
         { return COMiC_ERROR; }
     }
 
