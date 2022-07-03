@@ -38,7 +38,7 @@ typedef uint64_t COMiC_QWord;
 typedef unsigned int COMiC_FastestNumber;
 
 typedef COMiC_FastestNumber COMiC_Bool;
-# define COMiC_FALSE (0)
+# define COMiC_FALSE (0 != 0)
 # define COMiC_TRUE (!COMiC_FALSE)
 
 typedef COMiC_Bool COMiC_IfError;

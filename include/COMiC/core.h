@@ -15,5 +15,6 @@ extern "C" {
 # include "core/rb_tree.h"
 # include "core/ordered_rb_tree.h"
 # include "core/arena.h"
+# include "core/doubly_linked_list.h"
 
 #endif /* COMiC_CORE_H */
