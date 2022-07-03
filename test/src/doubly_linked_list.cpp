@@ -8,7 +8,6 @@ COMiC_IfError hello_world(COMiC_TestCaseContext *context) {
 
 COMiC_Test_REGISTRY_SUBFUNCTION_HEAD(Core, DoublyLinkedList)
 {
-
     COMiC_Test_REGISTRY_ADD_TEST(CORRECTNESS, "hello world", hello_world);
     return COMiC_SUCCESS;
 }

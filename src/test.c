@@ -27,16 +27,6 @@ COMiC_IfError COMiC_TestContext_Destructor(
     return COMiC_SUCCESS;
 }
 
-COMiC_IfError COMiC_TestContext_AddTest(
-        COMiC_Out COMiC_TestContext *self,
-        COMiC_Out COMiC_Error *error,
-        COMiC_In COMiC_Test_Kind kind,
-        COMiC_In char const *name,
-        COMiC_In COMiC_TestCaseProc proc
-) noexcept {
-    return COMiC_SUCCESS;
-}
-
 COMiC_IfError COMiC_Test_FailedAssertion(
         COMiC_Out COMiC_Error *error,
         COMiC_In char *format,

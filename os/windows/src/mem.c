@@ -28,7 +28,7 @@ COMiC_IfError COMiC_NativeDeAllocOnPages(
             pointer,
             0,
             MEM_RELEASE
-    ))
+    ) == 0)
     { return COMiC_OS_Windows_FormatErrorMessage(error); }
     return COMiC_SUCCESS;
 }

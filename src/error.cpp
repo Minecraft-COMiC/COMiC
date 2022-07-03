@@ -71,11 +71,11 @@ COMiC_IfError COMiC_ErrorHeap_Alloc(
         COMiC_In COMiC_USize size
 ) noexcept
 {
-    if (_COMiC_ErrorHeap_Alloc(error, pointer, size))
+    if (_COMiC_ErrorHeap_Alloc(error, pointer, size + sizeof(COMiC_USize)))
     { return COMiC_ERROR; }
 
     *(COMiC_USize *) *pointer = size;
-    *pointer = (void *) (((COMiC_UIntPtr) pointer) + sizeof(COMiC_USize));
+    *pointer = (void *) (((COMiC_UIntPtr) *pointer) + sizeof(COMiC_USize));
 
     return COMiC_SUCCESS;
 }

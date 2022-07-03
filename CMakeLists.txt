@@ -30,8 +30,8 @@ add_library(
         $<TARGET_OBJECTS:COMiC::OS>
 
         # ./src/application.c
-        src/error.c
-        src/error.cpp
+        ./src/error.c
+        ./src/error.cpp
         # ./src/single_buffer.c
         # ./src/global_heap.c
         # ./src/rb_tree.c
@@ -41,7 +41,9 @@ add_library(
         # ./src/chunk_extra_buffer.cpp
         # ./src/validate_version.cpp
         # ./src/validate_type_sizes.cpp
-        src/test.c)
+        ./src/test.c
+        ./src/test.cpp
+)
 
 
 set_target_properties(core PROPERTIES LINKER_LANGUAGE C)
