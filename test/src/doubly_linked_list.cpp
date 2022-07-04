@@ -3,7 +3,7 @@
 #include "registry.h"
 
 COMiC_IfError hello_world(COMiC_TestCaseContext *context) {
-    return COMiC_ERROR;
+    return COMiC_SUCCESS;
 };
 
 COMiC_Test_REGISTRY_SUBFUNCTION_HEAD(Core, DoublyLinkedList)

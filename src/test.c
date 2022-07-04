@@ -53,10 +53,21 @@ long double COMiC_Test_GetDuration(void) noexcept
 { return 0.0l; }
 
 
+COMiC_IfError COMiC_TestResults_Destructor(
+        COMiC_Out COMiC_TestResults *self,
+        COMiC_Out COMiC_Error *error
+) noexcept {
+    if (COMiC_Arena_Destructor(&(self->results_buffer), error))
+    { return COMiC_ERROR; }
+
+    return COMiC_SUCCESS;
+}
+
 int COMiC_Test_Main(int argc, char *argv[])
 {
     COMiC_Error error;
     COMiC_TestContext context;
+    COMiC_TestResults results;
 
     if (COMiC_TestContext_Constructor(&context, &error))
     {
@@ -70,6 +81,17 @@ int COMiC_Test_Main(int argc, char *argv[])
         return COMiC_Error_PrintTopLevel(COMiC_Error_PrintTopLevel_StdLibPuts, stderr, &error);
     }
 
+    if (COMiC_TestContext_RunTests(&context, &results, &error))
+    {
+        fputs("Failed to run tests:", stderr);
+        return COMiC_Error_PrintTopLevel(COMiC_Error_PrintTopLevel_StdLibPuts, stderr, &error);
+    }
+
+    if (COMiC_TestResults_Destructor(&results, &error))
+    {
+        fputs("Failed destroy test results:", stderr);
+        return COMiC_Error_PrintTopLevel(COMiC_Error_PrintTopLevel_StdLibPuts, stderr, &error);
+    }
 
     if (COMiC_TestContext_Destructor(&context, &error))
     {

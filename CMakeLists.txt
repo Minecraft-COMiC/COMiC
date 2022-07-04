@@ -61,4 +61,13 @@ install(
         DESTINATION ./
 )
 
+add_library(
+        __COMiC_TestRuntime
+        STATIC
+
+        ./src/test_main.c
+)
+target_link_libraries(__COMiC_TestRuntime PRIVATE COMiC::Core)
+add_library(COMiC::TestRuntime ALIAS __COMiC_TestRuntime)
+
 add_subdirectory(test)

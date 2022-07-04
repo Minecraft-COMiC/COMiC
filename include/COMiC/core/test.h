@@ -91,25 +91,6 @@ COMiC_IfError COMiC_TestContext_AddTest(
     if (COMiC_TestContext_AddTest(context, error, (COMiC_Test_Kind_ ## KIND), (NAME), (PROC))) \
     { return COMiC_ERROR; }
 
-
-# ifdef __cplusplus
-#  define COMiC_Test_SETUP_MAIN()                                              \
-    extern "C" {                                                               \
-        int main(int argc, char *argv[])                                       \
-        {                                                                      \
-            int COMiC_Test_Main(int, char*[]);                                 \
-            return COMiC_Test_Main(argc, argv);                                \
-        }                                                                      \
-    }
-# else
-#  define COMiC_Test_SETUP_MAIN()                                              \
-    int main(int argc, char *argv[])                                           \
-    {                                                                          \
-        int COMiC_Test_Main(int, char*[]);                                     \
-        return COMiC_Test_Main(argc, argv);                                    \
-    }
-# endif
-
 COMiC_IfError COMiC_Test_FailedAssertion(
         COMiC_Out COMiC_Error *error,
         COMiC_In char *format,
@@ -127,6 +108,32 @@ void COMiC_Test_ResetDuration(void) noexcept;
 
 long double COMiC_Test_GetDuration(void) noexcept;
 
+typedef struct COMiC_TestCaseResult
+{
+    struct COMiC_TestCaseResult *_next;
+    struct _COMiC_TestCase *meta;
+    long double full_duration;
+    long double body_duration;
+    COMiC_USize memory_leak;
+    COMiC_Error *error;
+} COMiC_TestCaseResult;
+
+typedef struct COMiC_TestResults
+{
+    COMiC_TestCaseResult *first;
+    COMiC_Arena results_buffer;
+} COMiC_TestResults;
+
+COMiC_IfError COMiC_TestContext_RunTests(
+        COMiC_In COMiC_TestContext *context,
+        COMiC_Out COMiC_TestResults *results,
+        COMiC_Out COMiC_Error *error
+) noexcept;
+
+COMiC_IfError COMiC_TestResults_Destructor(
+        COMiC_Out COMiC_TestResults *self,
+        COMiC_Out COMiC_Error *error
+) noexcept;
 
 # ifdef __cplusplus
 }

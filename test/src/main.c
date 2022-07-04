@@ -10,5 +10,3 @@ COMiC_IfError COMiC_Test_Registry(
     COMiC_Test_REGISTRY_ADD_SUBREGISTRY(Core, DoublyLinkedList);
     return COMiC_SUCCESS;
 }
-
-COMiC_Test_SETUP_MAIN()
