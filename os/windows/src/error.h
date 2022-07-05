@@ -1,20 +1,18 @@
-#ifndef COMiC_OS_WINDOWS_ERROR_H
-#define COMiC_OS_WINDOWS_ERROR_H
+#ifndef COMiC__OS_WINDOWS_ERROR_H
+# define COMiC__OS_WINDOWS_ERROR_H
 
-#include <COMiC/types.h>
-#include <COMiC/error.h>
+# include <COMiC/core/types.h>
+# include <COMiC/core/error.h>
 
 # ifdef __cplusplus
 extern "C" {
-#endif
+# endif
 
-COMiC_Constructor
-void COMiC_OS_Windows_FormatErrorMessage(
-        COMiC_Out COMiC_Error *self,
-        COMiC_In COMiC_ErrNo err_no
+COMiC_IfError COMiC_OS_Windows_FormatErrorMessage(
+        COMiC_Out COMiC_Error *self
 );
 
 # ifdef __cplusplus
 };
-#endif
-#endif /* COMiC_OS_WINDOWS_ERROR_H */
+# endif
+#endif /* COMiC__OS_WINDOWS_ERROR_H */

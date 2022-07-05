@@ -1,42 +1,73 @@
-#include <COMiC.h>
+#include <stdio.h>
+#include <varargs.h>
 
-void COMiC_Error_NoDealloc(void *_)
-{}
+#include <COMiC/core.h>
 
-COMiC_Constructor
-void COMiC_Error_Set(
-        COMiC_Out COMiC_Error *self,
-        COMiC_In COMiC_ErrNo err_no,
-        COMiC_In COMiC_Optional(NULL) char *message,
-        COMiC_In COMiC_Optional(NULL) void *external_data,
-        COMiC_In COMiC_Optional(COMiC_Error_NoDealloc) void (*free_func)(void *)
-)
-{
-    self->err_no = err_no;
-    self->message = message;
-    self->external_data = external_data;
-    self->free_func = free_func;
-}
-
-COMiC_Constructor
-void COMiC_Error_Init(
+void COMiC_Error_EmptyConstructor(
         COMiC_Out COMiC_Error *self
-)
-{
-    self->err_no = COMiC_ErrNo_NoError;
+) noexcept {
+    self->cls = NULL;
+    self->extra_data = NULL;
     self->message = NULL;
-    self->external_data = NULL;
-    self->free_func = COMiC_Error_NoDealloc;
 }
 
+COMiC_IfError COMiC_Error_Clear(
+        COMiC_InOut COMiC_Error *self,
+        COMiC_Out COMiC_Error *error
+) noexcept {
+    if (COMiC_Error_Destructor(self, error))
+    { return COMiC_ERROR; }
+    COMiC_Error_EmptyConstructor(self);
+    return COMiC_SUCCESS;
+}
 
-COMiC_Destructor
-void COMiC_Error_Release(
-        COMiC_In COMiC_Error *self
-)
-{
-    if (self->message != NULL)
+COMiC_IfError COMiC_Error_Destructor(
+        COMiC_InOut COMiC_Error *self,
+        COMiC_Out COMiC_Error *error
+) noexcept {
+    if (self->cls != NULL)
+    { return self->cls->destructor(self, error); }
+    return COMiC_SUCCESS;
+}
+
+COMiC_IfError COMiC_Error_FormatMessage(
+        COMiC_Out COMiC_Error *error,
+        COMiC_In COMiC_Optional(0) COMiC_USize extra_data_size,
+        COMiC_Out char **formatted_string,
+        COMiC_Out COMiC_Optional(NULL) void **extra_data,
+        COMiC_In char const *format,
+        COMiC_In ...
+) noexcept {
+    va_list varargs;
+    va_start(varargs, format);
+    int message_size_i = vsnprintf(NULL, 0, format, varargs);
+    va_end(varargs);
+
+    if (message_size_i < 0)
     {
-        self->free_func(self->message);
+        // todo
+        return COMiC_ERROR;
     }
+    COMiC_USize message_size = ((COMiC_USize) message_size_i) + 1;
+
+    if (COMiC_ErrorHeap_Alloc(
+            error,
+            (void **) formatted_string,
+            message_size + extra_data_size
+    ))
+    { return COMiC_ERROR; }
+
+    if (extra_data!= NULL)
+    { *extra_data = (void *)(((COMiC_USize)formatted_string) + message_size); }
+
+    va_start(varargs, format);
+    if (vsnprintf(*formatted_string, message_size, format, varargs) < 0){
+        va_end(varargs);
+
+        // todo
+        return COMiC_ERROR;
+    }
+    va_end(varargs);
+
+    return COMiC_SUCCESS;
 }

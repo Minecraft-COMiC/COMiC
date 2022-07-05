@@ -1,8 +1,8 @@
 #include <COMiC.h>
 
 COMiC_Constructor
-COMiC_IfError COMiC_Application_Init(
-        COMiC_Out COMiC_Application *self,
+COMiC_IfError COMiC_BaseApplication_Init(
+        COMiC_Out COMiC_BaseApplication *self,
         COMiC_Out COMiC_Error *error,
         COMiC_In COMiC_Optional(0) COMiC_USize max_heap_size
 )
@@ -19,8 +19,8 @@ COMiC_IfError COMiC_Application_Init(
 }
 
 COMiC_Destructor
-COMiC_IfError COMiC_Application_Finalize(
-        COMiC_In COMiC_Application *self,
+COMiC_IfError COMiC_BaseApplication_Finalize(
+        COMiC_In COMiC_BaseApplication *self,
         COMiC_Out COMiC_Optional(NULL) COMiC_Error *error
 )
 {
