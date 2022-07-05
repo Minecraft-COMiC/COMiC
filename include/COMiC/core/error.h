@@ -1,7 +1,7 @@
 #ifndef COMiC_Core_ERROR_H
 # define COMiC_Core_ERROR_H
 
-# include "types.h"
+# include "types.hpp"
 
 # ifdef __cplusplus
 extern "C" {

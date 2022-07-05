@@ -1,7 +1,7 @@
 #ifndef COMiC__OS_WINDOWS_ERROR_H
 # define COMiC__OS_WINDOWS_ERROR_H
 
-# include <COMiC/core/types.h>
+# include <COMiC/core/types.hpp>
 # include <COMiC/core/error.h>
 
 # ifdef __cplusplus
