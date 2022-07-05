@@ -2,11 +2,13 @@
 # define COMiC_Core_TYPES_H
 
 # ifndef __cplusplus
+
 #  include <stdint.h>
+#  include <limits.h>
+
 # else
-
 #  include <cstdint>
-
+#  include <climits>
 # endif
 
 # ifndef __cplusplus
@@ -20,26 +22,16 @@
 #  endif
 # endif
 
+# define COMiC_BYTE_SIZE (CHAR_BIT)
 
 typedef size_t COMiC_USize;
 typedef uintptr_t COMiC_UIntPtr;
-typedef int_fast8_t COMiC_Int8;
-typedef uint_fast8_t COMiC_UInt8;
-typedef int_fast16_t COMiC_Int16;
-typedef uint_fast16_t COMiC_UInt16;
-typedef int_fast32_t COMiC_Int32;
-typedef uint_fast32_t COMiC_UInt32;
-typedef int_fast64_t COMiC_Int64;
-typedef uint_fast64_t COMiC_UInt64;
-typedef uint8_t COMiC_Byte;
-typedef uint16_t COMiC_Word;
-typedef uint32_t COMiC_DWord;
-typedef uint64_t COMiC_QWord;
+typedef unsigned char COMiC_Byte;
 typedef unsigned int COMiC_FastestNumber;
 
 typedef COMiC_FastestNumber COMiC_Bool;
-# define COMiC_FALSE (0 != 0)
-# define COMiC_TRUE (!COMiC_FALSE)
+# define COMiC_FALSE (0)
+# define COMiC_TRUE (~0)
 
 typedef COMiC_Bool COMiC_IfError;
 # define COMiC_SUCCESS COMiC_FALSE
@@ -58,5 +50,8 @@ typedef enum COMiC_ComparisonResult
 # define COMiC_In
 # define COMiC_InOut
 # define COMiC_Out
+
+# define COMiC_ShiftPointer(POINTER, OFFSET) ((void *)(((COMiC_UIntPtr)(POINTER)) + ((COMiC_USize)(OFFSET))))
+# define COMiC_FromSuperStruct(POINTER, STRUCT, FIELD) ((STRUCT *)(COMiC_ShiftPointer((POINTER), -offsetof(STRUCT, FIELD))))
 
 #endif /* COMiC_Core_TYPES_H */
