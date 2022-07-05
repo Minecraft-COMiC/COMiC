@@ -1,7 +1,7 @@
 #ifndef COMiC_Core_RB_TREE_H
 # define COMiC_Core_RB_TREE_H
 
-# include "COMiC/core/types.h"
+# include "COMiC/core/types.hpp"
 # include "error.h"
 
 # ifdef __cplusplus

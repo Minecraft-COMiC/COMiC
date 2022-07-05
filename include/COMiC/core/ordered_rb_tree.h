@@ -1,7 +1,7 @@
 #ifndef COMiC_Core_ORDERED_RB_TREE_H
 # define COMiC_Core_ORDERED_RB_TREE_H
 
-# include "types.h"
+# include "types.hpp"
 # include "error.h"
 # include "rb_tree.h"
 # include "doubly_linked_list.h"

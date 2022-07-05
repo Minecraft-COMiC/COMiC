@@ -1,7 +1,7 @@
 #ifndef COMiC_Core_ARENA_HPP
 # define COMiC_Core_ARENA_HPP
 
-# include "types.h"
+# include "types.hpp"
 # include "arena.h"
 # include "os.h"
 

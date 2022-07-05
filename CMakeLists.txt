@@ -1,8 +1,8 @@
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.00)
 project(COMiC C CXX)
 
 set(CMAKE_C_STANDARD 99)
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 14)
 
 set(COMiC_VERSION_MAJOR 0)
 set(COMiC_VERSION_MINOR 0)
@@ -33,10 +33,23 @@ add_library(
         ./src/validate_version.cpp
         ./src/validate_type_sizes.cpp
         $<TARGET_OBJECTS:COMiC::OS>
+
+        # ./src/application.c
+        src/error.c
+        src/error.cpp
+        # ./src/single_buffer.c
+        # ./src/global_heap.c
+        # ./src/rb_tree.c
+        # ./src/rb_tree_pointers.cpp
+        # ./src/chunk_extra_buffer.h
+        # ./src/chunk_extra_buffer.c
+        # ./src/chunk_extra_buffer.cpp
+        # ./src/validate_version.cpp
+        # ./src/validate_type_sizes.cpp
 )
 
 
-set_target_properties(core PROPERTIES LINKER_LANGUAGE C)
+set_target_properties(core PROPERTIES LINKER_LANGUAGE CXX)
 add_subdirectory(os)
 target_include_directories(core PUBLIC ./include $<TARGET_PROPERTY:COMiC::OS,INCLUDE_DIRECTORIES>)
 

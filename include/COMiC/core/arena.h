@@ -1,7 +1,7 @@
 #ifndef COMiC_Core_ARENA_H
 # define COMiC_Core_ARENA_H
 
-# include "types.h"
+# include "types.hpp"
 
 # ifdef __cplusplus
 extern "C" {

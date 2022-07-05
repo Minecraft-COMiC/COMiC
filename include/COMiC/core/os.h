@@ -1,7 +1,7 @@
 #ifndef COMiC_Core_OS_H
 # define COMiC_Core_OS_H
 
-# include "types.h"
+# include "types.hpp"
 # include "error.h"
 
 

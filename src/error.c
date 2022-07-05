@@ -1,7 +1,7 @@
 #include <stdio.h>
-#include <varargs.h>
+#include <stdarg.h>
 
-#include <COMiC/core.h>
+//#include <COMiC/core.h>
 
 void COMiC_Error_EmptyConstructor(
         COMiC_Out COMiC_Error *self
@@ -39,9 +39,9 @@ COMiC_IfError COMiC_Error_FormatMessage(
         COMiC_In ...
 ) noexcept {
     va_list varargs;
-    va_start(varargs, format);
+            va_start(varargs, format);
     int message_size_i = vsnprintf(NULL, 0, format, varargs);
-    va_end(varargs);
+            va_end(varargs);
 
     if (message_size_i < 0)
     {
@@ -57,17 +57,18 @@ COMiC_IfError COMiC_Error_FormatMessage(
     ))
     { return COMiC_ERROR; }
 
-    if (extra_data!= NULL)
-    { *extra_data = (void *)(((COMiC_USize)formatted_string) + message_size); }
+    if (extra_data != NULL)
+    { *extra_data = (void *) (((COMiC_USize) formatted_string) + message_size); }
 
-    va_start(varargs, format);
-    if (vsnprintf(*formatted_string, message_size, format, varargs) < 0){
-        va_end(varargs);
+            va_start(varargs, format);
+    if (vsnprintf(*formatted_string, message_size, format, varargs) < 0)
+    {
+                va_end(varargs);
 
         // todo
         return COMiC_ERROR;
     }
-    va_end(varargs);
+            va_end(varargs);
 
     return COMiC_SUCCESS;
 }
