@@ -1,8 +1,7 @@
 cmake_minimum_required(VERSION 3.00)
-project(COMiC C CXX)
+project(COMiC CXX)
 
-set(CMAKE_C_STANDARD 99)
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 
 set(COMiC_VERSION_MAJOR 0)
 set(COMiC_VERSION_MINOR 0)
@@ -27,16 +26,20 @@ add_library(
         core
         STATIC
 
-        ./src/application.c
-        ./src/error.c
-        ./src/chunk.c
-        ./src/validate_version.cpp
-        ./src/validate_type_sizes.cpp
         $<TARGET_OBJECTS:COMiC::OS>
 
+        src/sentinel.cpp
+
+        src/util/uuid.cpp
+        src/util/md5.cpp
+
+        src/network/buffer.cpp
+        src/network/sender.cpp
+        src/network/receiver.cpp
+
         # ./src/application.c
-        src/error.c
-        src/error.cpp
+#        src/error.c
+#        src/error.cpp
         # ./src/single_buffer.c
         # ./src/global_heap.c
         # ./src/rb_tree.c
@@ -63,13 +66,3 @@ install(
         DIRECTORY ./include
         DESTINATION ./
 )
-
-
-#####################################################################################
-
-add_executable(
-        run
-        run.c
-)
-
-target_link_libraries(run COMiC::Core)

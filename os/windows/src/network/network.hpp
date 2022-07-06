@@ -3,6 +3,6 @@
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include "COMiC/network.h"
+#include "COMiC/network.hpp"
 
 #endif // COMIC_OS_WINDOWS_NETWORK_H

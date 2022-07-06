@@ -2,13 +2,8 @@ add_library(
         __COMiC_OS_Windows
         OBJECT
 
-        ./src/error.h
-        ./src/error.c
-        ./src/heap.c
-        ./src/mem.c
-
-        ./src/network/network.h
-        ./src/network/network.c
+        src/network/network.hpp
+        src/network/network.cpp
 )
 
 target_link_libraries(__COMiC_OS_Windows PUBLIC COMiC::Headers)

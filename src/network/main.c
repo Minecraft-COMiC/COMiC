@@ -1,12 +1,5 @@
 #include "main.h"
 
-static COMiC_Util_RSA_Keypair keypair;
-
-EVP_PKEY *GetPublicKey(void)
-{
-    return keypair.publicKey;
-}
-
 int main(void)
 {
     COMiC_Network_ServerNetInfo info;

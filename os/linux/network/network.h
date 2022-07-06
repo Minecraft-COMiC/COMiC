@@ -8,7 +8,7 @@
 #include <errno.h>
 #include <string.h>
 #include <unistd.h>
-#include "COMiC/network.h"
+#include "COMiC/network.hpp"
 
 
 
