@@ -1,7 +1,9 @@
-#ifndef COMIC_CORE_HPP
-# define COMIC_CORE_HPP
+#ifndef COMiC_Core_HPP
+# define COMiC_Core_HPP
 
 # include "core/types.hpp"
 # include "core/bit_array.hpp"
+# include "core/doubly_linked_list.hpp"
 
-#endif /* COMIC_CORE_HPP */
+
+#endif /* COMiC_Core_HPP */

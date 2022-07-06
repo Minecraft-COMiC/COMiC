@@ -4,7 +4,7 @@
 # include "types.hpp"
 # include "error.h"
 # include "rb_tree.h"
-# include "doubly_linked_list.h"
+# include "doubly_linked_list.hpp"
 
 # ifdef __cplusplus
 extern "C" {
