@@ -1,3 +1,1 @@
-//
-// Created by Admin on 06.07.2022.
-//
+#include <COMiC/core.hpp>
