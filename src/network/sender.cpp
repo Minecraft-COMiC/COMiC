@@ -26,8 +26,8 @@ void COMiC_Network_SendRequestEncryptionPacket(
             COMiC_In ClientNetInfo *connection
     )
     {
-        COMiC::Util::UUID uuid = COMiC::Util::UUID::random();
-        connection->uuid = uuid;
+        Util::UUID uuid = Util::UUID::random();
+        connection->uuid = &uuid;
 
         Buffer buf;
 

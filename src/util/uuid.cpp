@@ -5,8 +5,8 @@ namespace COMiC::Util
 {
     UUID UUID::random()
     {
-        char randomBytes[16];
-        COMiC::Core::OS::RandomBytes(reinterpret_cast<Byte *>(randomBytes), 16);
+        Byte randomBytes[16];
+        COMiC::Core::OS::RandomBytes(randomBytes, 16);
 
         randomBytes[6] &= 0x0F;
         randomBytes[6] |= 0x40;
@@ -18,8 +18,8 @@ namespace COMiC::Util
 
     UUID UUID::fromName(const char *name) noexcept
     {
-        char md5Bytes[16];
-        MD5((unsigned char *) name, 16, (unsigned char *) md5Bytes);
+        Byte md5Bytes[16];
+        MD5::hash(name, md5Bytes);
 
         md5Bytes[6] &= 0x0F;
         md5Bytes[6] |= 0x30;
@@ -37,46 +37,46 @@ namespace COMiC::Util
             if (str[i] == '-')
                 components[k++] = str + i;
 
-        I64 most_sig_bits = strtoll(components[0], nullptr, 16);
+        U64 most_sig_bits = strtoll(components[0], nullptr, 16);
         most_sig_bits <<= 16;
         most_sig_bits |= strtoll(components[1], nullptr, 16);
         most_sig_bits <<= 16;
         most_sig_bits |= strtoll(components[2], nullptr, 16);
 
-        I64 least_sig_bits = strtoll(components[3], nullptr, 16);
+        U64 least_sig_bits = strtoll(components[3], nullptr, 16);
         least_sig_bits <<= 48;
         least_sig_bits |= strtoll(components[4], nullptr, 16);
 
         return {most_sig_bits, least_sig_bits};
     }
 
-    constexpr I32 UUID::version() const noexcept
+    constexpr U32 UUID::version() const noexcept
     {
-        return (I32) (this->msb >> 12) & 0x0F;
+        return (U32) (this->msb >> 12) & 0x0F;
     }
 
-    constexpr I32 UUID::variant() const noexcept
+    constexpr U32 UUID::variant() const noexcept
     {
-        return (I32) (((U64) this->lsb >> (64 - ((U64) this->lsb >> 62))) & (this->lsb >> 63));
+        return (U32) (((U64) this->lsb >> (64 - ((U64) this->lsb >> 62))) & (this->lsb >> 63));
     }
 
-    constexpr I64 UUID::timestamp() const noexcept
-    {
-        if (this->version() != 1)
-            return -1;
-
-        return (this->msb & 0x0FFFLL) << 48 | ((this->msb >> 16) & 0x0FFFFLL) << 32 | (I64) ((U64) this->msb >> 32);
-    }
-
-    constexpr I32 UUID::clockSequence() const noexcept
+    constexpr U64 UUID::timestamp() const noexcept
     {
         if (this->version() != 1)
             return -1;
 
-        return (I32) ((U64) (this->lsb & 0x3FFF000000000000LL) >> 48);
+        return (this->msb & 0x0FFFLL) << 48 | ((this->msb >> 16) & 0x0FFFFLL) << 32 | (U64) ((U64) this->msb >> 32);
     }
 
-    constexpr I64 UUID::node() const noexcept
+    constexpr U32 UUID::clockSequence() const noexcept
+    {
+        if (this->version() != 1)
+            return -1;
+
+        return (U32) ((U64) (this->lsb & 0x3FFF000000000000LL) >> 48);
+    }
+
+    constexpr U64 UUID::node() const noexcept
     {
         if (this->version() != 1)
             return -1;
@@ -84,14 +84,14 @@ namespace COMiC::Util
         return this->lsb & 0x0000FFFFFFFFFFFFLL;
     }
 
-    void digits(I64 val, I32 digits, char *out)
+    void digits(U64 val, I32 digits, char *out)
     {
-        I64 hi = 1LL << (digits * 4);
+        U64 hi = 1LLU << (digits * 4);
 
         sprintf(out, "%llx", hi | (val & (hi - 1)));
     }
 
-    inline void UUID::toString(char out[37]) const noexcept
+    void UUID::toString(char out[37]) const noexcept
     {
         char buf[13];
 

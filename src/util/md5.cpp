@@ -97,9 +97,8 @@ namespace COMiC::Util
         buffer[3] += DD;
     }
 
-    MD5::MD5()
+    constexpr MD5::MD5() noexcept
     {
-        this->size = 0;
         this->buffer[0] = A;
         this->buffer[1] = B;
         this->buffer[2] = C;
@@ -159,10 +158,11 @@ namespace COMiC::Util
 
     void MD5::hash(const char *str, U8 out[16])
     {
-        update((U8 *) input, strlen(str));
-        final();
+        MD5 md5;
+        md5.update((U8 *) str, strlen(str));
+        md5.final();
 
-        memcpy(out, this->digest, 16);
+        memcpy(out, md5.digest, 16);
     }
 
 }

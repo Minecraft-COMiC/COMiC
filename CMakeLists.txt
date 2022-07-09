@@ -32,23 +32,12 @@ add_library(
 
         src/util/uuid.cpp
         src/util/md5.cpp
+        src/util/sha1.cpp
+        src/util/aes.cpp
 
         src/network/buffer.cpp
         src/network/sender.cpp
         src/network/receiver.cpp
-
-        # ./src/application.c
-#        src/error.c
-#        src/error.cpp
-        # ./src/single_buffer.c
-        # ./src/global_heap.c
-        # ./src/rb_tree.c
-        # ./src/rb_tree_pointers.cpp
-        # ./src/chunk_extra_buffer.h
-        # ./src/chunk_extra_buffer.c
-        # ./src/chunk_extra_buffer.cpp
-        # ./src/validate_version.cpp
-        # ./src/validate_type_sizes.cpp
 )
 
 
@@ -66,3 +55,20 @@ install(
         DIRECTORY ./include
         DESTINATION ./
 )
+
+#####################################################################################
+
+if (WIN32)
+    set(OS_DEPENDENT_LIBRARIES ws2_32 Wininet)
+elseif (UNIX AND NOT APPLE)
+    set(OS_DEPENDENT_LIBRARIES)
+elseif (APPLE)
+    set(OS_DEPENDENT_LIBRARIES)
+endif ()
+
+add_executable(
+        run
+        run.cpp
+)
+
+target_link_libraries(run COMiC::Core ${OS_DEPENDENT_LIBRARIES})

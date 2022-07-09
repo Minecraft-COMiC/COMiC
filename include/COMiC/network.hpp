@@ -194,7 +194,7 @@ namespace COMiC::Network
         OS::Socket socket;
         NetworkState state;
         char *username;
-        COMiC::Util::UUID uuid;
+        COMiC::Util::UUID *uuid;
     };
 
     class Buffer
@@ -279,12 +279,12 @@ namespace COMiC::Network
 
         void writePacketID(PacketID id);
 
-        [[nodiscard]] Byte *getBytes() const
+        [[nodiscard]] constexpr Byte *getBytes() const noexcept
         {
             return this->bytes;
         }
 
-        [[nodiscard]] size_t getSize() const
+        [[nodiscard]] constexpr size_t getSize() const noexcept
         {
             return this->size;
         }
@@ -296,14 +296,19 @@ namespace COMiC::Network
 
     void listenToConnections(
             COMiC_In ServerNetInfo server,
-            COMiC_In ClientNetInfo *client,
-            COMiC_In void (*onPacketReceive)(ClientNetInfo *, Buffer *)
+            COMiC_In ClientNetInfo *client
     );
 
     void sendPacket(
             COMiC_In ClientNetInfo *connection,
             COMiC_In Buffer *buf
     );
+
+    void finalize(
+            COMiC_In ServerNetInfo server
+    );
+
+    void sendHTTPGet(const char *server, const char *page, Byte *out, size_t *written);
 
 /*
 void COMiC_Network_SendRequestEncryptionPacket(
@@ -326,10 +331,6 @@ void COMiC_Network_SendRequestEncryptionPacket(
     void receivePacket(
             COMiC_In ClientNetInfo *connection,
             COMiC_In Buffer *buf
-    );
-
-    void finalize(
-            COMiC_In ServerNetInfo server
     );
 }
 

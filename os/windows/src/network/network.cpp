@@ -8,7 +8,7 @@ namespace COMiC::Network
         printf("Initializing WinSock... ");
         if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
         {
-            printf("Failed! Error code : %d", WSAGetLastError());
+            printf("Failed: %d", WSAGetLastError());
             exit(1);
         }
         puts("Done");
@@ -30,16 +30,15 @@ namespace COMiC::Network
         if (bind(server->socket.socket, (struct sockaddr *) &server->address, sizeof(server->address)) ==
             SOCKET_ERROR)
         {
-            printf("Bind failed with error code : %d", WSAGetLastError());
+            printf("Bind failed with error code: %d", WSAGetLastError());
             exit(1);
         }
         puts("Done");
     }
 
-    void COMiC_Network_ListenToConnections(
+    void listenToConnections(
             ServerNetInfo server,
-            ClientNetInfo *client,
-            void (*onPacketReceive)(ClientNetInfo *, Buffer *)
+            ClientNetInfo *client
     )
     {
         // Listen to incoming connections:
@@ -52,7 +51,7 @@ namespace COMiC::Network
         client->socket.socket = (int) accept(server.socket.socket, (struct sockaddr *) &client->address, &c);
         if (client->socket.socket == INVALID_SOCKET)
         {
-            printf("Accept failed with error code : %d", WSAGetLastError());
+            printf("accept() failed: %d", WSAGetLastError());
             exit(1);
         }
 
@@ -69,7 +68,7 @@ namespace COMiC::Network
                 Buffer buf((Byte *) bytes, 0, message_length);
                 buf.readVarInt();
 
-                onPacketReceive(client, &buf);
+                receivePacket(client, &buf);
             }
             else if (message_length == 0)
             {
@@ -78,7 +77,7 @@ namespace COMiC::Network
             }
             else
             {
-                printf("Failed receiving data from client! Error code: %d\n", WSAGetLastError());
+                printf("Failed receiving data from client: %d\n", WSAGetLastError());
                 break;
             }
         }
@@ -98,5 +97,103 @@ namespace COMiC::Network
     {
         closesocket(server.socket.socket);
         WSACleanup();
+    }
+
+    void sendHTTPGet(const char *server, const char *page, Byte *out, size_t *written)
+    {
+        *written = 0;
+
+        // Initialize WinInet:
+        HINTERNET hInternet = InternetOpenA(
+                "",
+                INTERNET_OPEN_TYPE_PRECONFIG,
+                nullptr,
+                nullptr,
+                0
+        );
+
+        if (hInternet == nullptr)
+        {
+            fprintf(stderr, "sendHTTPGet(): InternetOpen() failed: %d", GetLastError());
+            return;
+        }
+
+        // Open HTTP session:
+        HINTERNET hConnect = InternetConnectA(
+                hInternet,
+                server,
+                INTERNET_DEFAULT_HTTPS_PORT,
+                nullptr,
+                nullptr,
+                INTERNET_SERVICE_HTTP,
+                0,
+                0
+        );
+
+        if (hConnect == nullptr)
+        {
+            InternetCloseHandle(hInternet);
+            fprintf(stderr, "sendHTTPGet(): InternetConnect() to %s failed: %d", server, GetLastError());
+            return;
+        }
+
+        // Open request:
+        HINTERNET hRequest = HttpOpenRequestA(
+                hConnect,
+                "GET",
+                page,
+                nullptr,
+                nullptr,
+                nullptr,
+                INTERNET_FLAG_SECURE,
+                0
+        );
+
+        if (hRequest == nullptr)
+        {
+            InternetCloseHandle(hInternet);
+            InternetCloseHandle(hConnect);
+            fprintf(stderr, "sendHTTPGet(): HttpOpenRequest() to %s%s failed: %d", server, page, GetLastError());
+            return;
+        }
+
+        // Send request:
+        if (HttpSendRequestA(hRequest, nullptr, 0, nullptr, 0) == TRUE)
+        {
+            Byte buf[1024];
+            while (true)
+            {
+                // Read response:
+                DWORD bytesRead;
+                BOOL isRead = InternetReadFile(
+                        hRequest,
+                        buf,
+                        sizeof(buf),
+                        &bytesRead
+                );
+
+                if (isRead == FALSE || bytesRead == 0)
+                    break;
+
+                if (out != nullptr)
+                    memcpy(out + *written, buf, bytesRead);
+
+                *written += bytesRead;
+            }
+
+            if (out != nullptr)
+                out[*written] = '\0';
+        }
+        else
+            fprintf(stderr, "sendHTTPGet(): HttpSendRequest() to %s%s failed: %d", server, page, GetLastError());
+
+        // Close request:
+        InternetCloseHandle(hRequest);
+
+        // Close session:
+        InternetCloseHandle(hConnect);
+
+        // Close WinInet:
+        InternetCloseHandle(hInternet);
     }
 }
