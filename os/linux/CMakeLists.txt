@@ -2,8 +2,8 @@ add_library(
         __COMiC_OS_Linux
         OBJECT
 
-        ./network/network.h
-        ./network/network.c
+        ./network/network.hpp
+        ./network/network.cpp
 )
 
 target_link_libraries(__COMiC_OS_Linux PUBLIC COMiC::Headers)

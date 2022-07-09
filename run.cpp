@@ -17,7 +17,7 @@ int main()
 
     Byte buf[1024];
     size_t written;
-    Network::sendHTTPGet("sessionserver.mojang.com", "/", buf, &written);
+    Network::sendHTTPGet("sessionserver.mojang.com", "", buf, &written);
     puts(reinterpret_cast<const char *>(buf));
 
     return 0;

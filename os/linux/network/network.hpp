@@ -1,13 +1,15 @@
 #ifndef COMIC_OS_LINUX_NETWORK_H
 #define COMIC_OS_LINUX_NETWORK_H
 
-#include <stdio.h>
+#include <cstdio>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <errno.h>
-#include <string.h>
+#include <cerrno>
+#include <cstring>
 #include <unistd.h>
+#include <cstdlib>
+#include <netdb.h>
 #include "COMiC/network.hpp"
 
 

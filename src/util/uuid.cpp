@@ -1,3 +1,4 @@
+#include <cstdlib>
 #include <COMiC/util.hpp>
 #include "COMiC/core/_os.h"
 

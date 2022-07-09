@@ -1,6 +1,7 @@
 #ifndef COMIC_NETWORK_HPP
 #define COMIC_NETWORK_HPP
 
+#include <cstdlib>
 #include <COMiC/core.hpp>
 #include <COMiC/util.hpp>
 #include "COMiC/core/_os.h"
