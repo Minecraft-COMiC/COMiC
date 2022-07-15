@@ -1,18 +1,43 @@
 #include <cstdlib>
+#include <charconv>
+#include <sstream>
+#include <iomanip>
 #include <COMiC/util.hpp>
+#include <COMiC/crypto.hpp>
 #include "COMiC/core/_os.h"
 
 namespace COMiC::Util
 {
+    UUID::UUID(const std::string &str, bool dashes) noexcept
+    {
+        auto copy = str;
+        if (dashes)
+            copy.erase(std::remove(copy.begin(), copy.end(), '-'), copy.end());
+
+        U64 tmp = 0;
+        std::from_chars(copy.data(), copy.data() + 8, this->msb, 16);
+        this->msb <<= 16;
+        std::from_chars(copy.data() + 8, copy.data() + 8 + 4, tmp, 16);
+        this->msb |= tmp;
+        this->msb <<= 16;
+        std::from_chars(copy.data() + 8 + 4, copy.data() + 8 + 4 + 4, tmp, 16);
+        this->msb |= tmp;
+
+        std::from_chars(copy.data() + 8 + 4 + 4, copy.data() + 8 + 4 + 4 + 4, this->lsb, 16);
+        this->lsb <<= 48;
+        std::from_chars(copy.data() + 8 + 4 + 4 + 4, copy.data() + 8 + 4 + 4 + 4 + 12, tmp, 16);
+        this->lsb |= tmp;
+    }
+
     UUID UUID::random()
     {
         Byte randomBytes[16];
-        COMiC::Core::OS::RandomBytes(randomBytes, 16);
+        COMiC::Crypto::secureBytes(randomBytes, 16);
 
         randomBytes[6] &= 0x0F;
         randomBytes[6] |= 0x40;
         randomBytes[8] &= 0x3F;
-        randomBytes[8] |= -128;
+        randomBytes[8] |= 0x80;
 
         return UUID(randomBytes);
     }
@@ -20,35 +45,14 @@ namespace COMiC::Util
     UUID UUID::fromName(const char *name) noexcept
     {
         Byte md5Bytes[16];
-        MD5::hash(name, md5Bytes);
+        Crypto::MD5::hash(name, md5Bytes);
 
         md5Bytes[6] &= 0x0F;
         md5Bytes[6] |= 0x30;
         md5Bytes[8] &= 0x3F;
-        md5Bytes[8] |= -128;
+        md5Bytes[8] |= 0x80;
 
         return UUID(md5Bytes);
-    }
-
-    UUID UUID::fromString(const char *str) noexcept
-    {
-        const char *components[5];
-
-        for (I8 i = 0, k = 0; str[i] != '\0'; i++)
-            if (str[i] == '-')
-                components[k++] = str + i;
-
-        U64 most_sig_bits = strtoll(components[0], nullptr, 16);
-        most_sig_bits <<= 16;
-        most_sig_bits |= strtoll(components[1], nullptr, 16);
-        most_sig_bits <<= 16;
-        most_sig_bits |= strtoll(components[2], nullptr, 16);
-
-        U64 least_sig_bits = strtoll(components[3], nullptr, 16);
-        least_sig_bits <<= 48;
-        least_sig_bits |= strtoll(components[4], nullptr, 16);
-
-        return {most_sig_bits, least_sig_bits};
     }
 
     constexpr U32 UUID::version() const noexcept
@@ -85,35 +89,21 @@ namespace COMiC::Util
         return this->lsb & 0x0000FFFFFFFFFFFFLL;
     }
 
-    void digits(U64 val, I32 digits, char *out)
+    std::string digits(U64 val, USize digits)
     {
-        U64 hi = 1LLU << (digits * 4);
+        U64 hi = 1ULL << (digits * 4);
+        std::stringstream stream;
+        stream << std::hex << (hi | (val & (hi - 1)));
 
-        sprintf(out, "%llx", hi | (val & (hi - 1)));
+        return {stream.str().substr(1)};
     }
 
-    void UUID::toString(char out[37]) const noexcept
+    std::string UUID::toString() const noexcept
     {
-        char buf[13];
-
-        digits(this->msb >> 32, 8, buf);
-        memcpy(out + 0, buf, 8);
-        out[8] = '-';
-
-        digits(this->msb >> 16, 4, buf);
-        memcpy(out + 9, buf, 4);
-        out[13] = '-';
-
-        digits(this->msb, 4, buf);
-        memcpy(out + 14, buf, 4);
-        out[18] = '-';
-
-        digits(this->lsb >> 48, 4, buf);
-        memcpy(out + 19, buf, 4);
-        out[23] = '-';
-
-        digits(this->lsb, 12, buf);
-        memcpy(out + 24, buf, 12);
-        out[36] = 0;
+        return (digits(this->msb >> 32, 8) + "-" +
+                digits(this->msb >> 16, 4) + "-" +
+                digits(this->msb, 4) + "-" +
+                digits(this->lsb >> 48, 4) + "-" +
+                digits(this->lsb, 12));
     }
 }

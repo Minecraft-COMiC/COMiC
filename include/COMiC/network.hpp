@@ -2,25 +2,29 @@
 #define COMIC_NETWORK_HPP
 
 #include <cstdlib>
+#include <cstring>
 #include <COMiC/core.hpp>
 #include <COMiC/util.hpp>
-#include "COMiC/core/_os.h"
-
-#define DEFAULT_SERVER_IP ("0.0.0.0")
-#define DEFAULT_SERVER_PORT (25565)
+#include <COMiC/crypto.hpp>
 
 namespace COMiC::Network
 {
+    const inline char *DEFAULT_SERVER_IP = "127.0.0.1";
+    const inline I32 DEFAULT_SERVER_PORT = 25565;
+
     enum NetworkState
     {
-        HANDSHAKING = -1, PLAY, STATUS, LOGIN
+        HANDSHAKING = -1,
+        PLAY = 0,
+        STATUS = 1,
+        LOGIN = 2
     };
 
-// Packet ID is prefixed with Network State(raw id + 1)
+// Packet ID is prefixed with Network State (raw id + 1)
     enum PacketID
     {
 // HANDSHAKING:
-        HANDSHAKE_C2S_PACKET_ID,
+        HANDSHAKE_C2S_PACKET_ID = 0x000,
 // PLAY:
         ENTITY_SPAWN_S2C_PACKET_ID = 0x100,
         EXPERIENCE_ORB_SPAWN_S2C_PACKET_ID,
@@ -183,36 +187,37 @@ namespace COMiC::Network
         struct Socket;
     }
 
-    struct ServerNetInfo
-    {
-        OS::InetAddr address;
-        OS::Socket socket;
-    };
-
     struct ClientNetInfo
     {
-        OS::InetAddr address;
-        OS::Socket socket;
+        OS::InetAddr *address;
+        OS::Socket *socket;
         NetworkState state;
         char *username;
-        COMiC::Util::UUID *uuid;
+        Util::UUID *uuid;
+        bool encrypted;
+        Crypto::AES *cipher;
     };
 
-    class Buffer
+    struct Buffer
     {
     private:
-        Byte *bytes;
-        size_t index;
-        size_t size;
+        enum {DATA_START = 5};
+
     public:
-        Buffer(Byte *bytes, size_t index, size_t size) : bytes(bytes), index(index), size(size)
+        Byte *bytes;
+        USize index;
+        USize size;
+
+        Buffer(const Byte *bytes, USize index, USize size) : index(index), size(size)
         {
+            this->bytes = new Byte[size];
+            memcpy(this->bytes, bytes, size);
         }
 
-        explicit Buffer(size_t capacity) : size(capacity)
+        explicit Buffer(USize capacity) : size(capacity)
         {
-            this->index = 5;
-            this->bytes = static_cast<Byte *>(malloc(capacity * sizeof(*bytes)));
+            this->index = DATA_START;
+            this->bytes = new Byte[capacity];
         }
 
         Buffer() : Buffer(128)
@@ -221,12 +226,12 @@ namespace COMiC::Network
 
         ~Buffer()
         {
-            free(bytes);
+            delete[] bytes;
         }
 
         void prepare();
 
-        void skip(size_t count);
+        void skip(USize count);
 
         Byte read();
 
@@ -264,9 +269,9 @@ namespace COMiC::Network
 
         void writeDouble(double value);
 
-        void readString(char *out, size_t maxlen);
+        void readString(char *out, USize maxlen);
 
-        void writeString(const char *str, size_t maxlen);
+        void writeString(const char *str, USize maxlen);
 
         I32 readEnum();
 
@@ -279,60 +284,34 @@ namespace COMiC::Network
         PacketID readPacketID(NetworkState state);
 
         void writePacketID(PacketID id);
-
-        [[nodiscard]] constexpr Byte *getBytes() const noexcept
-        {
-            return this->bytes;
-        }
-
-        [[nodiscard]] constexpr size_t getSize() const noexcept
-        {
-            return this->size;
-        }
     };
 
-    void init(
-            COMiC_Out ServerNetInfo *server
-    );
+    struct NetManager
+    {
+        OS::InetAddr *address;
+        OS::Socket *socket;
+        Crypto::RSA *rsa;
 
-    void listenToConnections(
-            COMiC_In ServerNetInfo server,
-            COMiC_In ClientNetInfo *client
-    );
+        void sendRequestEncryptionPacket(ClientNetInfo *connection) const;
 
-    void sendPacket(
-            COMiC_In ClientNetInfo *connection,
-            COMiC_In Buffer *buf
-    );
+        static void sendLoginSuccessPacket(ClientNetInfo *connection);
 
-    void finalize(
-            COMiC_In ServerNetInfo server
-    );
+        static void sendGameJoinPacket(ClientNetInfo *connection);
 
-    void sendHTTPGet(const char *server, const char *page, Byte *out, size_t *written);
+        static void sendHeldItemChangePacket(ClientNetInfo *connection);
 
-/*
-void COMiC_Network_SendRequestEncryptionPacket(
-        COMiC_In ClientNetInfo *connection
-);
-*/
+        void receivePacket(ClientNetInfo *connection, Buffer *buf) const;
+    };
 
-    void sendLoginSuccessPacket(
-            COMiC_In ClientNetInfo *connection
-    );
+    void init(NetManager *server);
 
-    void sendGameJoinPacket(
-            COMiC_In ClientNetInfo *connection
-    );
+    void listenToConnections(NetManager server, ClientNetInfo *client);
 
-    void sendHeldItemChangePacket(
-            COMiC_In ClientNetInfo *connection
-    );
+    void sendPacket(ClientNetInfo *connection, Buffer *buf);
 
-    void receivePacket(
-            COMiC_In ClientNetInfo *connection,
-            COMiC_In Buffer *buf
-    );
+    void finalize(NetManager server);
+
+    void sendHTTPGet(const std::string &server, const std::string &page, std::string &out);
 }
 
 #endif /* COMiC_NETWORK_HPP */

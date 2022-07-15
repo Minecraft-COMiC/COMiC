@@ -1,8 +1,11 @@
+#include <cstdio>
+#include <string>
 #include "network.hpp"
+#include "COMiC/core/_os.h"
 
 namespace COMiC::Network
 {
-    void init(ServerNetInfo *server)
+    void init(NetManager *server)
     {
         WSADATA wsa;
         printf("Initializing WinSock... ");
@@ -14,7 +17,9 @@ namespace COMiC::Network
         puts("Done");
 
         printf("Creating socket... ");
-        if ((server->socket.socket = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
+        server->socket = new OS::Socket();
+
+        if ((server->socket->socket = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
         {
             printf("Could not create socket: %d", WSAGetLastError());
             exit(1);
@@ -22,34 +27,42 @@ namespace COMiC::Network
         puts("Done");
 
         // Prepare the server structure:
-        server->address.address.sin_family = AF_INET;
-        InetPton(AF_INET, DEFAULT_SERVER_IP, &server->address.address.sin_addr.s_addr);
-        server->address.address.sin_port = htons(DEFAULT_SERVER_PORT);
+        server->address = new OS::InetAddr();
+        server->address->address.sin_family = AF_INET;
+        InetPton(AF_INET, DEFAULT_SERVER_IP, &server->address->address.sin_addr.s_addr);
+        server->address->address.sin_port = htons(DEFAULT_SERVER_PORT);
 
         printf("Binding... ");
-        if (bind(server->socket.socket, (struct sockaddr *) &server->address, sizeof(server->address)) ==
+        if (bind(server->socket->socket, (sockaddr *) &server->address->address, sizeof(server->address->address)) ==
             SOCKET_ERROR)
         {
-            printf("Bind failed with error code: %d", WSAGetLastError());
+//            printf("Bind failed with error code: %d", WSAGetLastError());
+            wchar_t *s = nullptr;
+            FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                           nullptr, WSAGetLastError(),
+                           MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US),
+                           (LPWSTR) &s, 100, nullptr);
+            fprintf(stderr, "%S\n", s);
+            LocalFree(s);
+
             exit(1);
         }
         puts("Done");
     }
 
-    void listenToConnections(
-            ServerNetInfo server,
-            ClientNetInfo *client
-    )
+    void listenToConnections(NetManager server, ClientNetInfo *client)
     {
         // Listen to incoming connections:
-        listen(server.socket.socket, 3);
+        listen(server.socket->socket, 3);
 
         puts("Waiting for incoming connections...");
 
         // Accept incoming connection:
-        int c = sizeof(client->address);
-        client->socket.socket = (int) accept(server.socket.socket, (struct sockaddr *) &client->address, &c);
-        if (client->socket.socket == INVALID_SOCKET)
+        client->address = new OS::InetAddr();
+        int c = sizeof(client->address->address);
+        client->socket = new OS::Socket();
+        client->socket->socket = (int) accept(server.socket->socket, (sockaddr *) &client->address->address, &c);
+        if (client->socket->socket == INVALID_SOCKET)
         {
             printf("accept() failed: %d", WSAGetLastError());
             exit(1);
@@ -58,17 +71,20 @@ namespace COMiC::Network
         puts("Connection accepted");
 
         int message_length;
-        char bytes[512];
+        Byte bytes[512];
         while (true)
         {
-            message_length = recv(client->socket.socket, bytes, 512, 0);
+            message_length = recv(client->socket->socket, (char *) bytes, sizeof(bytes), 0);
 
             if (message_length > 0)
             {
-                Buffer buf((Byte *) bytes, 0, message_length);
-                buf.readVarInt();
+                if (client->encrypted)
+                    client->cipher->decrypt(bytes, message_length, bytes);
 
-                receivePacket(client, &buf);
+                Buffer buf(bytes, 0, message_length);
+                buf.size = buf.readVarInt();
+
+                server.receivePacket(client, &buf);
             }
             else if (message_length == 0)
             {
@@ -83,26 +99,26 @@ namespace COMiC::Network
         }
     }
 
-    void sendPacket(
-            ClientNetInfo *connection,
-            Buffer *buf
-    )
+    void sendPacket(ClientNetInfo *connection, Buffer *buf)
     {
         buf->prepare();
-        send(connection->socket.socket, (char *) buf->getBytes(), (int) buf->getSize(), 0);
-        free(buf);
+
+        if (connection->encrypted)
+            connection->cipher->encrypt(buf->bytes + buf->index, buf->size, buf->bytes + buf->index);
+
+        send(connection->socket->socket, (char *) (buf->bytes + buf->index), (int) buf->size, 0);
     }
 
-    void finalize(ServerNetInfo server)
+    void finalize(NetManager server)
     {
-        closesocket(server.socket.socket);
+        closesocket(server.socket->socket);
+        delete server.address;
+        delete server.socket;
         WSACleanup();
     }
 
-    void sendHTTPGet(const char *server, const char *page, Byte *out, size_t *written)
+    void sendHTTPGet(const std::string &server, const std::string &page, std::string &out)
     {
-        *written = 0;
-
         // Initialize WinInet:
         HINTERNET hInternet = InternetOpenA(
                 "",
@@ -114,14 +130,14 @@ namespace COMiC::Network
 
         if (hInternet == nullptr)
         {
-            fprintf(stderr, "sendHTTPGet(): InternetOpen() failed: %d", GetLastError());
+            fprintf(stderr, "sendHTTPGet(): InternetOpen() failed: %lu", GetLastError());
             return;
         }
 
         // Open HTTP session:
         HINTERNET hConnect = InternetConnectA(
                 hInternet,
-                server,
+                server.c_str(),
                 INTERNET_DEFAULT_HTTPS_PORT,
                 nullptr,
                 nullptr,
@@ -133,7 +149,7 @@ namespace COMiC::Network
         if (hConnect == nullptr)
         {
             InternetCloseHandle(hInternet);
-            fprintf(stderr, "sendHTTPGet(): InternetConnect() to %s failed: %d", server, GetLastError());
+            fprintf(stderr, "sendHTTPGet(): InternetConnect() to %s failed: %lu", server.c_str(), GetLastError());
             return;
         }
 
@@ -141,7 +157,7 @@ namespace COMiC::Network
         HINTERNET hRequest = HttpOpenRequestA(
                 hConnect,
                 "GET",
-                page,
+                page.c_str(),
                 nullptr,
                 nullptr,
                 nullptr,
@@ -153,14 +169,15 @@ namespace COMiC::Network
         {
             InternetCloseHandle(hInternet);
             InternetCloseHandle(hConnect);
-            fprintf(stderr, "sendHTTPGet(): HttpOpenRequest() to %s%s failed: %d", server, page, GetLastError());
+            fprintf(stderr, "sendHTTPGet(): HttpOpenRequest() to %s%s failed: %lu", server.c_str(), page.c_str(),
+                    GetLastError());
             return;
         }
 
         // Send request:
         if (HttpSendRequestA(hRequest, nullptr, 0, nullptr, 0) == TRUE)
         {
-            Byte buf[1024];
+            char buf[1024];
             while (true)
             {
                 // Read response:
@@ -175,17 +192,12 @@ namespace COMiC::Network
                 if (isRead == FALSE || bytesRead == 0)
                     break;
 
-                if (out != nullptr)
-                    memcpy(out + *written, buf, bytesRead);
-
-                *written += bytesRead;
+                out.append(buf, bytesRead);
             }
-
-            if (out != nullptr)
-                out[*written] = '\0';
         }
         else
-            fprintf(stderr, "sendHTTPGet(): HttpSendRequest() to %s%s failed: %d", server, page, GetLastError());
+            fprintf(stderr, "sendHTTPGet(): HttpSendRequest() to %s%s failed: %lu", server.c_str(), page.c_str(),
+                    GetLastError());
 
         // Close request:
         InternetCloseHandle(hRequest);

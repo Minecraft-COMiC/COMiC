@@ -22,12 +22,4 @@ namespace COMiC::Network::OS
     };
 }
 
-namespace COMiC::Core::OS
-{
-    static inline void RandomBytes(Byte *out, USize len)
-    {
-        getrandom(out, len, GRND_RANDOM);
-    }
-}
-
 #endif // COMiC__OS_LINUX_H

@@ -27,25 +27,24 @@ namespace COMiC
         FAIL = true
     };
 
-    typedef enum ComparisonResult
+    enum ComparisonResult
     {
         LESS = -1,
         EQUAL = 0,
         GREATER = 1,
-    } ComparisonResult;
-
-#   define COMiC_In
-#   define COMiC_InOut
-#   define COMiC_Out
-
+    };
 
     template<typename in_t, typename out_t>
     static constexpr inline out_t *shiftPointerL(in_t *pointer, COMiC::USize offset)
-    { return (out_t *) (((COMiC::UIntPtr) pointer) - offset); }
+    {
+        return (out_t *) (((COMiC::UIntPtr) pointer) - offset);
+    }
 
     template<typename in_t, typename out_t>
     static constexpr inline out_t *shiftPointerR(in_t *pointer, COMiC::USize offset)
-    { return (out_t *) (((COMiC::UIntPtr) pointer) + offset); }
+    {
+        return (out_t *) (((COMiC::UIntPtr) pointer) + offset);
+    }
 
 }
 #endif /* COMiC_Core_TYPES_HPP */

@@ -6,7 +6,7 @@ add_library(
         src/network/network.cpp
 )
 
-target_link_libraries(__COMiC_OS_Windows PUBLIC COMiC::Headers)
+target_link_libraries(__COMiC_OS_Windows PUBLIC COMiC::Headers ws2_32 Wininet)
 target_include_directories(__COMiC_OS_Windows PUBLIC ./include)
 
 add_library(

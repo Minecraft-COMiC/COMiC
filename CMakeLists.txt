@@ -16,8 +16,11 @@ add_library(
         __COMiC_Headers
         INTERFACE
 )
-target_include_directories(__COMiC_Headers INTERFACE ./include)
 
+find_package(OpenSSL REQUIRED)
+
+target_include_directories(__COMiC_Headers INTERFACE ./include)
+target_link_libraries(__COMiC_Headers INTERFACE OpenSSL::Crypto)
 
 add_library(COMiC::Headers ALIAS __COMiC_Headers)
 
@@ -31,19 +34,16 @@ add_library(
         src/sentinel.cpp
 
         src/util/uuid.cpp
-        src/util/md5.cpp
-        src/util/sha1.cpp
-        src/util/aes.cpp
 
         src/network/buffer.cpp
         src/network/sender.cpp
         src/network/receiver.cpp
 )
 
-
 set_target_properties(core PROPERTIES LINKER_LANGUAGE CXX)
 add_subdirectory(os)
 target_include_directories(core PUBLIC ./include $<TARGET_PROPERTY:COMiC::OS,INCLUDE_DIRECTORIES>)
+target_link_libraries(core PUBLIC COMiC::OS)
 
 add_library(COMiC::Core ALIAS core)
 
@@ -58,18 +58,9 @@ install(
 
 #####################################################################################
 
-if (WIN32)
-    set(OS_DEPENDENT_LIBRARIES ws2_32 Wininet)
-elseif (UNIX AND NOT APPLE)
-    find_package(CURL REQUIRED)
-    set(OS_DEPENDENT_LIBRARIES curl)
-elseif (APPLE)
-    set(OS_DEPENDENT_LIBRARIES)
-endif ()
-
 add_executable(
         run
         run.cpp
 )
 
-target_link_libraries(run COMiC::Core ${OS_DEPENDENT_LIBRARIES})
+target_link_libraries(run COMiC::Core)

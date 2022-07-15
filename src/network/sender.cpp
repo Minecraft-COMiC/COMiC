@@ -1,41 +1,32 @@
 #include <COMiC/network.hpp>
+#include <COMiC/crypto.hpp>
 
 namespace COMiC::Network
 {
-/*
-void COMiC_Network_SendRequestEncryptionPacket(
-        COMiC_In COMiC_Network_ClientNetInfo *connection
-)
-{
-    char nonce[4];
-    RAND_bytes((unsigned char *) nonce, 4);
-
-    COMiC_Network_Buffer buf = COMiC_Network_Buffer_InitWithDefaultCapacity();
-
-    COMiC_Network_Buffer_WritePacketID(&buf, LOGIN_HELLO_S2C_PACKET_ID);
-
-    COMiC_Network_Buffer_WriteString(&buf, "", 20);
-    COMiC_Network_Buffer_WriteRSAKey(&buf, getPublicKey());
-    COMiC_Network_Buffer_WriteByteArray(&buf, nonce, 4);
-
-    COMiC_Network_SendPacket(connection, &buf);
-}
-*/
-
-    void sendLoginSuccessPacket(
-            COMiC_In ClientNetInfo *connection
-    )
+    void NetManager::sendRequestEncryptionPacket(ClientNetInfo *connection) const
     {
-        Util::UUID uuid = Util::UUID::random();
-        connection->uuid = &uuid;
+        Byte nonce[4];
+        COMiC::Crypto::secureBytes(nonce, 4);
 
+        Buffer buf;
+
+        buf.writePacketID(LOGIN_HELLO_S2C_PACKET_ID);
+
+        buf.writeString("", 20); // Server id
+        // Write public RSA key:
+        buf.writeByteArray(this->rsa->getEncodedPublicKey(), (I32) this->rsa->getEncodedKeySize());
+        buf.writeByteArray(nonce, 4); // Nonce
+
+        sendPacket(connection, &buf);
+    }
+
+    void NetManager::sendLoginSuccessPacket(ClientNetInfo *connection)
+    {
         Buffer buf;
 
         buf.writePacketID(LOGIN_SUCCESS_S2C_PACKET_ID);
 
-        char str[37];
-        uuid.toString(str);
-        buf.writeString(str, 36);
+        buf.writeString(connection->uuid->toString().c_str(), 36);
         buf.writeString(connection->username, 16);
 
         sendPacket(connection, &buf);
@@ -43,9 +34,7 @@ void COMiC_Network_SendRequestEncryptionPacket(
         connection->state = PLAY;
     }
 
-    void sendGameJoinPacket(
-            COMiC_In ClientNetInfo *connection
-    )
+    void NetManager::sendGameJoinPacket(ClientNetInfo *connection)
     {
         Buffer buf;
 
@@ -62,9 +51,7 @@ void COMiC_Network_SendRequestEncryptionPacket(
         sendPacket(connection, &buf);
     }
 
-    void sendHeldItemChangePacket(
-            COMiC_In ClientNetInfo *connection
-    )
+    void NetManager::sendHeldItemChangePacket(ClientNetInfo *connection)
     {
         Buffer buf;
 

@@ -5,11 +5,11 @@
 
 namespace COMiC::Network
 {
-    U32 GetVarIntSizeInBytes(I32 i)
+    USize varIntSize(I32 i)
     {
         for (I32 j = 1; j < 5; j++)
         {
-            if ((i << j * 7) != 0)
+            if ((i & -1 << j * 7) != 0)
                 continue;
 
             return j;
@@ -20,19 +20,15 @@ namespace COMiC::Network
 
     void Buffer::prepare()
     {
-        this->index -= 5;
-        size_t data_size = this->index;
+        USize data_size = this->index - DATA_START, offset = varIntSize((I32) data_size);
 
-        U32 offset = GetVarIntSizeInBytes((I32) this->index);
-
-        this->index = 5 - offset;
+        this->index = DATA_START - offset;
         writeVarInt((I32) data_size);
-        this->bytes += (5 - offset);
-
+        this->index = DATA_START - offset;
         this->size = data_size + offset;
     }
 
-    void Buffer::skip(size_t count)
+    void Buffer::skip(USize count)
     {
         this->index += count;
     }
@@ -206,7 +202,7 @@ namespace COMiC::Network
         writeLong(u.l);
     }
 
-    void Buffer::readString(char *out, size_t maxlen)
+    void Buffer::readString(char *out, USize maxlen)
     {
         I32 strLen = readVarInt();
 
@@ -219,11 +215,11 @@ namespace COMiC::Network
         skip(strLen);
     }
 
-    void Buffer::writeString(const char *str, size_t maxlen)
+    void Buffer::writeString(const char *str, USize maxlen)
     {
-        U32 strLen = strlen(str);
+        I32 strLen = (I32) strlen(str);
 
-        if (strLen > maxlen) return;
+        if ((USize) strLen > maxlen) return;
 
         writeVarInt((I32) strLen);
 

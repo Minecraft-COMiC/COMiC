@@ -4,9 +4,7 @@
 
 namespace COMiC::Network
 {
-    void init(
-            COMiC_Out ServerNetInfo *server
-    )
+    void init(ServerNetInfo *server)
     {
         printf("Creating socket... ");
         if ((server->socket.socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
@@ -30,26 +28,34 @@ namespace COMiC::Network
         puts("Done");
     }
 
-    void listenToConnections(
-            COMiC_In ServerNetInfo server,
-            COMiC_In ClientNetInfo *client
-    )
+    void listenToConnections(ServerNetInfo server, ClientNetInfo *client)
     {
         // Listen to incoming connections:
-        if (listen(server.socket.socket, 3) < 0)
+        if (
+                listen(server
+                               .socket.socket, 3) < 0)
         {
-            printf("Listen failed: %s", strerror(errno));
+            printf("Listen failed: %s",
+
+                   strerror(errno)
+
+            );
             exit(1);
         }
 
         puts("Waiting for incoming connections...");
 
-        // Accept incoming connection:
+// Accept incoming connection:
         socklen_t c = sizeof(client->address);
-        client->socket.socket = (int) accept(server.socket.socket, (struct sockaddr *) &client->address, &c);
+        client->socket.
+                socket = (int) accept(server.socket.socket, (struct sockaddr *) &client->address, &c);
         if (client->socket.socket < 0)
         {
-            printf("Accept failed with error code : %s", strerror(errno));
+            printf("Accept failed with error code : %s",
+
+                   strerror(errno)
+
+            );
             exit(1);
         }
 
@@ -64,9 +70,12 @@ namespace COMiC::Network
             if (message_length > 0)
             {
                 Buffer buf((Byte *) bytes, 0, message_length);
-                buf.readVarInt();
+                buf.
 
-                receivePacket(client, &buf);
+                        readVarInt();
+
+                receivePacket(client, &buf
+                );
             }
             else if (message_length == 0)
             {
@@ -75,25 +84,36 @@ namespace COMiC::Network
             }
             else
             {
-                printf("Failed receiving data from client! Error code: %s\n", strerror(errno));
+                printf("Failed receiving data from client! Error code: %s\n",
+
+                       strerror(errno)
+
+                );
                 break;
             }
         }
     }
 
-    void sendPacket(
-            COMiC_In ClientNetInfo *connection,
-            COMiC_In Buffer *buf
-    )
+    void sendPacket(ClientNetInfo *connection, Buffer *buf)
     {
-        buf->prepare();
-        send(connection->socket.socket, buf->getBytes(), (size_t) buf->getSize(), 0);
+        buf->
+
+                prepare();
+
+        send(connection
+                     ->socket.socket, buf->
+
+                     getBytes(), (size_t)
+
+                     buf->
+
+                             getSize(),
+
+             0);
         free(buf);
     }
 
-    void finalize(
-            COMiC_In ServerNetInfo server
-    )
+    void finalize(ServerNetInfo server    )
     {
         close(server.socket.socket);
     }
@@ -153,4 +173,5 @@ namespace COMiC::Network
 
         delete[] hostname;
     }
+
 }
