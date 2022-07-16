@@ -6,16 +6,13 @@ using namespace COMiC;
 
 int main()
 {
-    Network::NetManager server{};
-    Network::init(&server);
+    Network::NetManager server;
+    Network::init(server);
 
     Crypto::init();
 
-    server.rsa = new Crypto::RSA(false);
-
-    Network::ClientNetInfo client{};
-    client.state = Network::NetworkState::HANDSHAKING;
-    Network::listenToConnections(server, &client);
+    Network::ClientNetInfo client;
+    Network::listenToConnections(server, client);
 
     Network::finalize(server);
 

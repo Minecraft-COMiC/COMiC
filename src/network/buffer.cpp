@@ -202,26 +202,26 @@ namespace COMiC::Network
         writeLong(u.l);
     }
 
-    void Buffer::readString(char *out, USize maxlen)
+    std::string Buffer::readString(USize maxlen)
     {
         I32 strLen = readVarInt();
 
         if (strLen > maxlen * 4)
-            return;
+            return "";
 
-        memcpy(out, this->bytes + this->index, strLen);
-        out[strLen] = 0;
-
+        auto str = std::string((char *) this->bytes + this->index, strLen);
         skip(strLen);
+
+        return str;
     }
 
-    void Buffer::writeString(const char *str, USize maxlen)
+    void Buffer::writeString(const std::string &str, USize maxlen)
     {
-        I32 strLen = (I32) strlen(str);
+        I32 strLen = (I32) str.length();
 
-        if ((USize) strLen > maxlen) return;
+        if (strLen > maxlen) return;
 
-        writeVarInt((I32) strLen);
+        writeVarInt(strLen);
 
         for (I32 j = 0; j < strLen; j++)
             write((Byte) str[j]);

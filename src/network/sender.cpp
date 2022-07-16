@@ -3,7 +3,7 @@
 
 namespace COMiC::Network
 {
-    void NetManager::sendRequestEncryptionPacket(ClientNetInfo *connection) const
+    void NetManager::sendRequestEncryptionPacket(ClientNetInfo &connection) const
     {
         Byte nonce[4];
         COMiC::Crypto::secureBytes(nonce, 4);
@@ -14,27 +14,27 @@ namespace COMiC::Network
 
         buf.writeString("", 20); // Server id
         // Write public RSA key:
-        buf.writeByteArray(this->rsa->getEncodedPublicKey(), (I32) this->rsa->getEncodedKeySize());
+        buf.writeByteArray(this->rsa.getEncodedPublicKey(), (I32) this->rsa.getEncodedKeySize());
         buf.writeByteArray(nonce, 4); // Nonce
 
-        sendPacket(connection, &buf);
+        sendPacket(connection, buf);
     }
 
-    void NetManager::sendLoginSuccessPacket(ClientNetInfo *connection)
+    void NetManager::sendLoginSuccessPacket(ClientNetInfo &connection)
     {
         Buffer buf;
 
         buf.writePacketID(LOGIN_SUCCESS_S2C_PACKET_ID);
 
-        buf.writeString(connection->uuid->toString().c_str(), 36);
-        buf.writeString(connection->username, 16);
+        buf.writeString(connection.uuid.toString(), 36);
+        buf.writeString(connection.username, 16);
 
-        sendPacket(connection, &buf);
+        sendPacket(connection, buf);
 
-        connection->state = PLAY;
+        connection.state = PLAY;
     }
 
-    void NetManager::sendGameJoinPacket(ClientNetInfo *connection)
+    void NetManager::sendGameJoinPacket(ClientNetInfo &connection)
     {
         Buffer buf;
 
@@ -48,10 +48,10 @@ namespace COMiC::Network
         buf.writeVarInt(10); // View distance
         buf.writeBool(false); // Show debug info
 
-        sendPacket(connection, &buf);
+        sendPacket(connection, buf);
     }
 
-    void NetManager::sendHeldItemChangePacket(ClientNetInfo *connection)
+    void NetManager::sendHeldItemChangePacket(ClientNetInfo &connection)
     {
         Buffer buf;
 
@@ -59,6 +59,6 @@ namespace COMiC::Network
 
         buf.write(4); // Selected hotbar shot
 
-        sendPacket(connection, &buf);
+        sendPacket(connection, buf);
     }
 }

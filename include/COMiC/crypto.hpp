@@ -1,6 +1,7 @@
 #ifndef COMIC_CRYPTO_HPP
 #define COMIC_CRYPTO_HPP
 
+#include <iostream>
 #include <cctype>
 #include <cstring>
 
@@ -233,6 +234,8 @@ namespace COMiC::Crypto
         EVP_CIPHER_CTX *encryptor, *decryptor;
 
     public:
+        AES() = default;
+
         AES(Byte key[AES_BLOCK_SIZE], Byte iv[AES_BLOCK_SIZE])
         {
             this->encryptor = EVP_CIPHER_CTX_new();
@@ -256,14 +259,14 @@ namespace COMiC::Crypto
                 _print_error("AES decryption initialization failed: ");
         }
 
-        void encrypt(const Byte *in, USize len, Byte *out)
+        void encrypt(const Byte *in, USize len, Byte *out) const
         {
             int truncated = (int) len;
             if (EVP_EncryptUpdate(this->encryptor, out, &truncated, in, truncated) != 1)
                 _print_error("Failed to encrypt: ");
         }
 
-        void decrypt(const Byte *in, USize len, Byte *out)
+        void decrypt(const Byte *in, USize len, Byte *out) const
         {
             int truncated = (int) len;
             if (EVP_DecryptUpdate(this->decryptor, out, &truncated, in, truncated) != 1)
@@ -382,13 +385,13 @@ namespace COMiC::Crypto
             }
         }
 
-        void encrypt(const Byte *in, USize len, Byte *out, USize *written)
+        void encrypt(const Byte *in, USize len, Byte *out, USize *written) const
         {
             if (EVP_PKEY_encrypt(this->cipher, out, written, in, len) != 1)
                 _print_error("Failed to encrypt: ");
         }
 
-        void decrypt(const Byte *in, USize len, Byte *out, USize *written)
+        void decrypt(const Byte *in, USize len, Byte *out, USize *written) const
         {
             if (EVP_PKEY_decrypt(this->cipher, out, written, in, len) != 1)
                 _print_error("Failed to decrypt: ");

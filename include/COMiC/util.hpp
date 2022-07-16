@@ -13,6 +13,8 @@ namespace COMiC::Util
 
     public:
 
+        UUID() = default;
+
         constexpr inline UUID(U64 mostSigBits, U64 leastSigBits) noexcept: msb(mostSigBits), lsb(leastSigBits)
         {
         };

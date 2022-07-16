@@ -191,11 +191,15 @@ namespace COMiC::Network
     {
         OS::InetAddr *address;
         OS::Socket *socket;
-        NetworkState state;
-        char *username;
-        Util::UUID *uuid;
-        bool encrypted;
-        Crypto::AES *cipher;
+        NetworkState state{};
+        std::string username;
+        Util::UUID uuid;
+        bool encrypted = false;
+        Crypto::AES cipher{};
+
+        ClientNetInfo();
+
+        ~ClientNetInfo();
     };
 
     struct Buffer
@@ -268,9 +272,9 @@ namespace COMiC::Network
 
         void writeDouble(double value);
 
-        void readString(char *out, USize maxlen);
+        std::string readString(USize maxlen);
 
-        void writeString(const char *str, USize maxlen);
+        void writeString(const std::string &str, USize maxlen);
 
         I32 readEnum();
 
@@ -289,28 +293,28 @@ namespace COMiC::Network
     {
         OS::InetAddr *address;
         OS::Socket *socket;
-        Crypto::RSA *rsa;
+        Crypto::RSA rsa = Crypto::RSA(false);
 
         NetManager();
 
         ~NetManager();
 
-        void sendRequestEncryptionPacket(ClientNetInfo *connection) const;
+        void sendRequestEncryptionPacket(ClientNetInfo &connection) const;
 
-        static void sendLoginSuccessPacket(ClientNetInfo *connection);
+        static void sendLoginSuccessPacket(ClientNetInfo &connection);
 
-        static void sendGameJoinPacket(ClientNetInfo *connection);
+        static void sendGameJoinPacket(ClientNetInfo &connection);
 
-        static void sendHeldItemChangePacket(ClientNetInfo *connection);
+        static void sendHeldItemChangePacket(ClientNetInfo &connection);
 
-        void receivePacket(ClientNetInfo *connection, Buffer *buf) const;
+        void receivePacket(ClientNetInfo &connection, Buffer &buf) const;
     };
 
-    void init(NetManager *server);
+    void init(NetManager &server);
 
-    void listenToConnections(const NetManager& server, ClientNetInfo *client);
+    void listenToConnections(const NetManager& server, ClientNetInfo &client);
 
-    void sendPacket(ClientNetInfo *connection, Buffer *buf);
+    void sendPacket(const ClientNetInfo &connection, Buffer &buf);
 
     void finalize(const NetManager& server);
 

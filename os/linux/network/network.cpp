@@ -6,24 +6,34 @@
 
 namespace COMiC::Network
 {
+    ClientNetInfo::ClientNetInfo()
+    {
+        this->socket = new OS::Socket();
+        this->address = new OS::InetAddr();
+    }
+
+    ClientNetInfo::~ClientNetInfo()
+    {
+        delete this->socket;
+        delete this->address;
+    }
+
     NetManager::NetManager()
     {
         this->address = new OS::InetAddr();
         this->socket = new OS::Socket();
-        this->rsa = nullptr;
     }
 
     NetManager::~NetManager()
     {
-        delete address;
-        delete socket;
-        delete rsa;
+        delete this->address;
+        delete this->socket;
     }
 
-    void init(NetManager *server)
+    void init(NetManager &server)
     {
         std::cout << "Creating socket... ";
-        if ((server->socket->socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+        if ((server.socket->socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
         {
             std::cerr << "Could not create socket: " << strerror(errno) << std::endl;
             exit(1);
@@ -31,12 +41,12 @@ namespace COMiC::Network
         std::cout << "Done" << std::endl;
 
         // Prepare the server structure:
-        server->address->address.sin_family = AF_INET;
-        inet_pton(AF_INET, DEFAULT_SERVER_IP, &server->address->address.sin_addr.s_addr);
-        server->address->address.sin_port = htons(DEFAULT_SERVER_PORT);
+        server.address->address.sin_family = AF_INET;
+        inet_pton(AF_INET, DEFAULT_SERVER_IP, &server.address->address.sin_addr.s_addr);
+        server.address->address.sin_port = htons(DEFAULT_SERVER_PORT);
 
         std::cout << "Binding... ";
-        if (bind(server->socket->socket, (sockaddr *) &server->address->address, sizeof(server->address->address)) < 0)
+        if (bind(server.socket->socket, (sockaddr *) &server.address->address, sizeof(server.address->address)) < 0)
         {
             std::cerr << "Bind failed: " << strerror(errno) << std::endl;
             exit(1);
@@ -44,7 +54,7 @@ namespace COMiC::Network
         std::cout << "Done" << std::endl;
     }
 
-    void listenToConnections(const NetManager& server, ClientNetInfo *client)
+    void listenToConnections(const NetManager& server, ClientNetInfo &client)
     {
         // Listen to incoming connections:
         if (listen(server.socket->socket, 3) < 0)
@@ -53,12 +63,12 @@ namespace COMiC::Network
             exit(1);
         }
 
-        std::cout << "Waiting for incoming connections...";
+        std::cout << "Waiting for incoming connections..." << std::flush;
 
         // Accept incoming connection:
-        socklen_t c = sizeof(client->address->address);
-        client->socket->socket = (int) accept(server.socket->socket, (sockaddr *) &client->address->address, &c);
-        if (client->socket->socket < 0)
+        socklen_t c = sizeof(client.address->address);
+        client.socket->socket = (int) accept(server.socket->socket, (sockaddr *) &client.address->address, &c);
+        if (client.socket->socket < 0)
         {
             std::cerr << "accept() failed: " << strerror(errno) << std::endl;
             exit(1);
@@ -70,17 +80,17 @@ namespace COMiC::Network
         Byte bytes[512];
         while (true)
         {
-            message_length = recv(client->socket->socket, bytes, 512, 0);
+            message_length = recv(client.socket->socket, bytes, 512, 0);
 
             if (message_length > 0)
             {
-                if (client->encrypted)
-                    client->cipher->decrypt(bytes, message_length, bytes);
+                if (client.encrypted)
+                    client.cipher.decrypt(bytes, message_length, bytes);
 
-                Buffer buf((Byte *) bytes, 0, message_length);
+                Buffer buf(bytes, 0, message_length);
                 buf.size = buf.readVarInt();
 
-                server.receivePacket(client, &buf);
+                server.receivePacket(client, buf);
             }
             else if (message_length == 0)
             {
@@ -95,14 +105,14 @@ namespace COMiC::Network
         }
     }
 
-    void sendPacket(ClientNetInfo *connection, Buffer *buf)
+    void sendPacket(const ClientNetInfo &connection, Buffer &buf)
     {
-        buf->prepare();
+        buf.prepare();
 
-        if (connection->encrypted)
-            connection->cipher->encrypt(buf->bytes + buf->index, buf->size, buf->bytes + buf->index);
+        if (connection.encrypted)
+            connection.cipher.encrypt(buf.bytes + buf.index, buf.size, buf.bytes + buf.index);
 
-        send(connection->socket->socket, buf->bytes + buf->index, (size_t) buf->size, 0);
+        send(connection.socket->socket, buf.bytes + buf.index, (size_t) buf.size, 0);
     }
 
     void finalize(const NetManager& server)
