@@ -1,4 +1,3 @@
-#include <cstdio>
 #include <string>
 #include <iostream>
 #include <COMiC/network.hpp>
@@ -7,42 +6,44 @@
 
 namespace COMiC::Network
 {
+    // TODO: Make separate handle functions
     void NetManager::receivePacket(ClientNetInfo *connection, Buffer *buf) const
     {
         PacketID packet_id = buf->readPacketID(connection->state);
 
-        puts("/////////////////NEW PACKET/////////////////");
-        printf("Id: 0x%s%X\n", (packet_id & 0xFF) < 0x10 ? "0" : "", packet_id & 0xFF);
-        printf("Network State: %d\n", connection->state);
+        std::cout << "/////////////////NEW PACKET/////////////////" << std::endl;
+        std::cout << "Id: 0x" << ((packet_id & 0xFF) < 0x10 ? "0" : "") << (packet_id & 0xFF) << std::endl;
+        std::cout << "Network state: " << connection->state << std::endl;
 
         switch (packet_id)
         {
             default:
                 break;
             case HANDSHAKE_C2S_PACKET_ID:
-                printf("Protocol Version: %d\n", buf->readVarInt());
+                std::cout << "Protocol version: " << buf->readVarInt() << std::endl;
 
                 char serv_address[255];
                 buf->readString(serv_address, 255);
-                printf("Server Address: %s\n", serv_address);
+                std::cout << "Server address:" << serv_address << std::endl;
 
-                printf("Server Port: %d\n", buf->readShort());
-                printf("New State: %d\n", connection->state = (NetworkState) buf->readEnum());
+                std::cout << "Server port:" << buf->readShort() << std::endl;
+
+                connection->state = (NetworkState) buf->readEnum();
+                std::cout << "New state: " << connection->state << std::endl;
 
                 break;
             case HELD_ITEM_CHANGE_S2C_PACKET_ID:
                 sendHeldItemChangePacket(connection);
-                puts("Held Item Change packet sent");
+                std::cout << "Held Item Change packet sent" << std::endl;
 
                 break;
             case LOGIN_HELLO_C2S_PACKET_ID:
                 connection->username = new char[16];
                 buf->readString(connection->username, 16);
-                printf("Username: %s\n", connection->username);
+                std::cout << "Username: " << connection->username << std::endl;
 
-//                connection->uuid = new Util::UUID("123e4567-e89b-12d3-a456-426614174000", true);
-//                sendLoginSuccessPacket(connection);
                 sendRequestEncryptionPacket(connection);
+
                 break;
             case LOGIN_KEY_C2S_PACKET_ID:
                 I32 enc_len = buf->readVarInt();
@@ -79,12 +80,9 @@ namespace COMiC::Network
                 page.append("&serverId=");
                 page.append(hexdigest);
 
-                sendHTTPGet(
-                        "sessionserver.mojang.com",
-                        page,
-                        response
-                );
+                sendHTTPGet("sessionserver.mojang.com", page, response);
 
+                // TODO: Proper JSON parser should be used for this
                 USize start = 0, end = 0;
                 for (USize i = 0, c = 0; i < response.length(); i++)
                 {
@@ -101,21 +99,21 @@ namespace COMiC::Network
                     }
                 }
 
-                std::string uuid_str = response.substr(start, end - start + 1);
+                auto uuid_str = response.substr(start, end - start + 1);
                 connection->uuid = new Util::UUID(uuid_str, false);
 
                 sendLoginSuccessPacket(connection);
-                puts("Login Success packet sent");
+                std::cout << "Login Success packet sent" << std::endl;
 
                 sendGameJoinPacket(connection);
-                puts("Join Game packet sent");
+                std::cout << "Join Game packet sent" << std::endl;
 
                 break;
-
         }
 
-        printf("Bytes = [");
-        for (I32 i = 0; i < buf->size; i++)
-            printf("%d%s", (U8) buf->bytes[i], i != buf->size - 1 ? ", " : "]\n");
+        std::cout << "Bytes = [";
+        for (auto i = 0; i < buf->size; i++)
+            std::cout << buf->bytes[i] << (i != buf->size - 1 ? ", " : "]");
+        std::cout << std::endl;
     }
 }

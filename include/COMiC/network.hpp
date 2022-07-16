@@ -205,18 +205,17 @@ namespace COMiC::Network
 
     public:
         Byte *bytes;
-        USize index;
+        USize index = DATA_START;
         USize size;
 
         Buffer(const Byte *bytes, USize index, USize size) : index(index), size(size)
         {
             this->bytes = new Byte[size];
-            memcpy(this->bytes, bytes, size);
+            std::memcpy(this->bytes, bytes, size);
         }
 
         explicit Buffer(USize capacity) : size(capacity)
         {
-            this->index = DATA_START;
             this->bytes = new Byte[capacity];
         }
 
@@ -292,6 +291,10 @@ namespace COMiC::Network
         OS::Socket *socket;
         Crypto::RSA *rsa;
 
+        NetManager();
+
+        ~NetManager();
+
         void sendRequestEncryptionPacket(ClientNetInfo *connection) const;
 
         static void sendLoginSuccessPacket(ClientNetInfo *connection);
@@ -305,11 +308,11 @@ namespace COMiC::Network
 
     void init(NetManager *server);
 
-    void listenToConnections(NetManager server, ClientNetInfo *client);
+    void listenToConnections(const NetManager& server, ClientNetInfo *client);
 
     void sendPacket(ClientNetInfo *connection, Buffer *buf);
 
-    void finalize(NetManager server);
+    void finalize(const NetManager& server);
 
     void sendHTTPGet(const std::string &server, const std::string &page, std::string &out);
 }

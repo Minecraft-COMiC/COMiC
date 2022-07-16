@@ -26,7 +26,7 @@ namespace COMiC::Crypto
     {
         char str[256];
         ERR_error_string_n(ERR_get_error(), str, sizeof(str));
-        fprintf(stderr, format, str);
+        std::cerr << format << str << std::endl;
     }
 
     static inline void init()
@@ -37,35 +37,35 @@ namespace COMiC::Crypto
                 nullptr
         ) != 1)
         {
-            _print_error("OpenSSL initialization failed: %s\n");
+            _print_error("OpenSSL initialization failed: ");
             return;
         }
 
         if (EVP_add_cipher(EVP_aes_128_cfb8()) != 1)
         {
-            _print_error("Failed to add AES CFB8 cipher: %s\n");
+            _print_error("Failed to add AES CFB8 cipher: ");
             return;
         }
 
         if (EVP_add_digest(EVP_sha1()) != 1)
         {
-            _print_error("Failed to add SHA1 digest: %s\n");
+            _print_error("Failed to add SHA1 digest: ");
             return;
         }
 
         if (EVP_add_digest(EVP_md5()) != 1)
         {
-            _print_error("Failed to add MD5 digest: %s\n");
+            _print_error("Failed to add MD5 digest: ");
             return;
         }
 
-        puts("Using OpenSSL " OPENSSL_VERSION_STR " as COMiC::Crypto API");
+        std::cout <<"Using OpenSSL " OPENSSL_VERSION_STR " as COMiC::Crypto API" << std::endl;
     }
 
     static inline void secureBytes(Byte *out, USize len)
     {
         if (RAND_bytes(out, (int) len) != 1)
-            _print_error("secureBytes() failed: %s\n");
+            _print_error("secureBytes() failed: ");
     }
 
     class MD5
@@ -78,30 +78,30 @@ namespace COMiC::Crypto
             this->ctx = EVP_MD_CTX_new();
             if (this->ctx == nullptr)
             {
-                _print_error("Could not create context for MD5: %s\n");
+                _print_error("Could not create context for MD5: ");
                 return;
             }
 
             if (EVP_DigestInit_ex(this->ctx, EVP_md5(), nullptr) != 1)
-                _print_error("MD5 constructor failed: %s\n");
+                _print_error("MD5 constructor failed: ");
         }
 
         void update(const Byte *input, USize len)
         {
             if (EVP_DigestUpdate(this->ctx, input, len) != 1)
-                _print_error("MD5#update() failed: %s\n");
+                _print_error("MD5#update() failed: ");
         }
 
         void final(Byte out[MD5_DIGEST_LENGTH])
         {
             if (EVP_DigestFinal(this->ctx, out, nullptr) != 1)
-                _print_error("MD5#final() failed: %s\n");
+                _print_error("MD5#final() failed: ");
         }
 
         static void hash(const char *str, Byte out[MD5_DIGEST_LENGTH])
         {
             if (EVP_Digest(str, strlen(str), out, nullptr, EVP_md5(), nullptr) != 1)
-                _print_error("MD5#hash() failed: %s\n");
+                _print_error("MD5#hash() failed: ");
         }
 
         ~MD5()
@@ -122,30 +122,30 @@ namespace COMiC::Crypto
             this->ctx = EVP_MD_CTX_new();
             if (this->ctx == nullptr)
             {
-                _print_error("Could not create context for SHA1: %s\n");
+                _print_error("Could not create context for SHA1: ");
                 return;
             }
 
             if (EVP_DigestInit_ex(this->ctx, EVP_sha1(), nullptr) != 1)
-                _print_error("SHA1 constructor failed: %s\n");
+                _print_error("SHA1 constructor failed: ");
         }
 
         void update(const Byte *input, USize len)
         {
             if (EVP_DigestUpdate(this->ctx, input, len) != 1)
-                _print_error("SHA1#update() failed: %s\n");
+                _print_error("SHA1#update() failed: ");
         }
 
         void final(Byte out[SHA_DIGEST_LENGTH])
         {
             if (EVP_DigestFinal(this->ctx, out, nullptr) != 1)
-                _print_error("SHA1#final() failed: %s\n");
+                _print_error("SHA1#final() failed: ");
         }
 
         static void hash(const char *str, Byte out[SHA_DIGEST_LENGTH])
         {
             if (EVP_Digest(str, strlen(str), out, nullptr, EVP_sha1(), nullptr) != 1)
-                _print_error("SHA1#hash() failed: %s\n");
+                _print_error("SHA1#hash() failed: ");
         }
 
         static void hexdigest(const Byte digest[SHA_DIGEST_LENGTH], char *out)
@@ -156,7 +156,7 @@ namespace COMiC::Crypto
             BIGNUM *bn = BN_new();
             if (bn == nullptr)
             {
-                _print_error("SHA1#hexdigest() failed: %s\n");
+                _print_error("SHA1#hexdigest() failed: ");
                 return;
             }
 
@@ -168,7 +168,7 @@ namespace COMiC::Crypto
                 if (BN_bin2bn(copy, SHA_DIGEST_LENGTH, bn) == nullptr ||
                     BN_add_word(bn, 1) != 1)
                 {
-                    _print_error("SHA1#hexdigest() failed: %s\n");
+                    _print_error("SHA1#hexdigest() failed: ");
                     BN_free(bn);
                     return;
                 }
@@ -179,7 +179,7 @@ namespace COMiC::Crypto
             {
                 if (BN_bin2bn(copy, SHA_DIGEST_LENGTH, bn) == nullptr)
                 {
-                    _print_error("SHA1#hexdigest() failed: %s\n");
+                    _print_error("SHA1#hexdigest() failed: ");
                     BN_free(bn);
                     return;
                 }
@@ -191,7 +191,7 @@ namespace COMiC::Crypto
             ans = BN_bn2hex(bn);
             if (ans == nullptr)
             {
-                _print_error("SHA1#hexdigest() failed: %s\n");
+                _print_error("SHA1#hexdigest() failed: ");
                 BN_free(bn);
                 return;
             }
@@ -238,36 +238,36 @@ namespace COMiC::Crypto
             this->encryptor = EVP_CIPHER_CTX_new();
             if (this->encryptor == nullptr)
             {
-                _print_error("Could not create ecnryption cipher context for AES: %s\n");
+                _print_error("Could not create encryption cipher context for AES: ");
                 return;
             }
 
             this->decryptor = EVP_CIPHER_CTX_new();
             if (this->decryptor == nullptr)
             {
-                _print_error("Could not create decryption cipher context for AES: %s\n");
+                _print_error("Could not create decryption cipher context for AES: ");
                 return;
             }
 
             if (EVP_EncryptInit(this->encryptor, EVP_aes_128_cfb8(), key, iv) != 1)
-                _print_error("AES encryption initialization failed: %s\n");
+                _print_error("AES encryption initialization failed: ");
 
             if (EVP_DecryptInit(this->decryptor, EVP_aes_128_cfb8(), key, iv) != 1)
-                _print_error("AES decryption initialization failed: %s\n");
+                _print_error("AES decryption initialization failed: ");
         }
 
         void encrypt(const Byte *in, USize len, Byte *out)
         {
             int truncated = (int) len;
             if (EVP_EncryptUpdate(this->encryptor, out, &truncated, in, truncated) != 1)
-                _print_error("Failed to encrypt: %s\n");
+                _print_error("Failed to encrypt: ");
         }
 
         void decrypt(const Byte *in, USize len, Byte *out)
         {
             int truncated = (int) len;
             if (EVP_DecryptUpdate(this->decryptor, out, &truncated, in, truncated) != 1)
-                _print_error("Failed to decrypt: %s\n");
+                _print_error("Failed to decrypt: ");
         }
 
         ~AES()
@@ -319,7 +319,7 @@ namespace COMiC::Crypto
             ERR:
             *keypair = nullptr;
 
-            _print_error("RSA#generateKeyPair() failed: %s\n");
+            _print_error("RSA#generateKeyPair() failed: ");
 
             if (ctx != nullptr)
                 EVP_PKEY_CTX_free(ctx);
@@ -330,7 +330,7 @@ namespace COMiC::Crypto
             Byte *str = nullptr;
             I32 len = i2d_PUBKEY(key, &str);
             if (len <= 0)
-                _print_error("RSA#encodePublicKey() failed: %s\n");
+                _print_error("RSA#encodePublicKey() failed: ");
 
             if (out != nullptr)
                 memcpy(out, str, len);
@@ -351,11 +351,10 @@ namespace COMiC::Crypto
             encodePublicKey(keypair, this->encodedPublicKey, &this->keySize);
 
             this->cipher = EVP_PKEY_CTX_new(keypair, nullptr);
-//            EVP_PKEY_free(keypair);
 
             if (this->cipher == nullptr)
             {
-                _print_error("Could not create cipher context for RSA: %s\n");
+                _print_error("Could not create cipher context for RSA: ");
                 return;
             }
 
@@ -363,7 +362,7 @@ namespace COMiC::Crypto
             {
                 if (EVP_PKEY_encrypt_init(this->cipher) != 1)
                 {
-                    _print_error("RSA encryption initialization failed: %s\n");
+                    _print_error("RSA encryption initialization failed: ");
                     return;
                 }
             }
@@ -371,14 +370,14 @@ namespace COMiC::Crypto
             {
                 if (EVP_PKEY_decrypt_init(this->cipher) != 1)
                 {
-                    _print_error("RSA decryption initialization failed: %s\n");
+                    _print_error("RSA decryption initialization failed: ");
                     return;
                 }
             }
 
             if (EVP_PKEY_CTX_set_rsa_padding(this->cipher, RSA_PKCS1_PADDING) != 1)
             {
-                _print_error("Unable to set RSA padding: %s\n");
+                _print_error("Unable to set RSA padding: ");
                 return;
             }
         }
@@ -386,13 +385,13 @@ namespace COMiC::Crypto
         void encrypt(const Byte *in, USize len, Byte *out, USize *written)
         {
             if (EVP_PKEY_encrypt(this->cipher, out, written, in, len) != 1)
-                _print_error("Failed to encrypt: %s\n");
+                _print_error("Failed to encrypt: ");
         }
 
         void decrypt(const Byte *in, USize len, Byte *out, USize *written)
         {
             if (EVP_PKEY_decrypt(this->cipher, out, written, in, len) != 1)
-                _print_error("Failed to decrypt: %s\n");
+                _print_error("Failed to decrypt: ");
         }
 
         [[nodiscard]] Byte *getEncodedPublicKey() const
