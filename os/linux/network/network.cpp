@@ -1,5 +1,6 @@
 #include <string>
 #include <iostream>
+#include <vector>
 #include <curl/curl.h>
 #include "network.hpp"
 #include "COMiC/core/_os.h"
@@ -54,7 +55,7 @@ namespace COMiC::Network
         std::cout << "Done" << std::endl;
     }
 
-    void listenToConnections(const ServerNetManager& server, ClientNetInfo &client)
+    void listenToConnections(const ServerNetManager &server, ClientNetInfo &connection)
     {
         // Listen to incoming connections:
         if (listen(server.socket->socket, 3) < 0)
@@ -66,9 +67,9 @@ namespace COMiC::Network
         std::cout << "Waiting for incoming connections..." << std::flush;
 
         // Accept incoming connection:
-        socklen_t c = sizeof(client.address->address);
-        client.socket->socket = (int) accept(server.socket->socket, (sockaddr *) &client.address->address, &c);
-        if (client.socket->socket < 0)
+        socklen_t c = sizeof(connection.address->address);
+        connection.socket->socket = (int) accept(server.socket->socket, (sockaddr *) &connection.address->address, &c);
+        if (connection.socket->socket < 0)
         {
             std::cerr << "accept() failed: " << strerror(errno) << std::endl;
             exit(1);
@@ -77,20 +78,43 @@ namespace COMiC::Network
         std::cout << "Connection accepted" << std::endl;
 
         ssize_t message_length;
-        Byte bytes[512];
+        Byte bytes[1024];
+        std::vector<Byte> msg;
         while (true)
         {
-            message_length = recv(client.socket->socket, bytes, 512, 0);
+            do
+            {
+                message_length = recv(connection.socket->socket, bytes, sizeof(bytes), 0);
+
+                if (message_length > 0)
+                    msg.insert(msg.end(), bytes, bytes + message_length);
+                else break;
+            }
+            while (message_length == sizeof(bytes));
 
             if (message_length > 0)
             {
-                if (client.encrypted)
-                    client.cipher.decrypt(bytes, message_length, bytes);
+                if (connection.encrypted)
+                    connection.cipher.decrypt(msg.data(), msg.size(), msg.data());
 
-                Buffer buf(bytes, 0, message_length);
+                Buffer buf(msg.data(), 0, msg.size());
+                msg.clear();
                 buf.size = buf.readVarInt();
 
-                server.receivePacket(client, buf);
+                if (connection.compressed)
+                {
+                    I32 data_length = buf.readVarInt();
+
+                    if (data_length > 0)
+                    {
+                        std::string inflated;
+                        connection.inflater.decompress(buf.bytes + buf.index, buf.size - buf.index, inflated);
+                        memcpy(buf.bytes, inflated.data(), inflated.length());
+                        buf.index = 0;
+                    }
+                }
+
+                server.receivePacket(connection, buf);
             }
             else if (message_length == 0)
             {
@@ -99,23 +123,19 @@ namespace COMiC::Network
             }
             else
             {
-                std::cerr << "Failed receiving data from client: " << strerror(errno) << std::endl;
+                std::cerr << "Failed receiving data from connection: " << strerror(errno) << std::endl;
                 break;
             }
         }
     }
 
-    void sendPacket(const ClientNetInfo &connection, Buffer &buf)
+    void sendPacket(ClientNetInfo &connection, Buffer &buf)
     {
-        buf.prepare();
-
-        if (connection.encrypted)
-            connection.cipher.encrypt(buf.bytes + buf.index, buf.size, buf.bytes + buf.index);
-
+        buf.prepare(connection);
         send(connection.socket->socket, buf.bytes + buf.index, (size_t) buf.size, 0);
     }
 
-    void finalize(const ServerNetManager& server)
+    void finalize(const ServerNetManager &server)
     {
         close(server.socket->socket);
     }
