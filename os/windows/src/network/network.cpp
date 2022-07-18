@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <string>
+#include <vector>
 #include "network.hpp"
 #include "COMiC/core/_os.h"
 
@@ -92,17 +93,26 @@ namespace COMiC::Network
         // TODO: Receive full data
         int message_length;
         Byte bytes[1024];
-        std::string msg;
+        std::vector<Byte> msg;
         while (true)
         {
-            message_length = recv(connection.socket->socket, (char *) bytes, sizeof(bytes), 0);
+            do
+            {
+                message_length = recv(connection.socket->socket, (char *) bytes, sizeof(bytes), 0);
+
+                if (message_length > 0)
+                    msg.insert(msg.end(), bytes, bytes + message_length);
+                else break;
+            }
+            while (message_length > sizeof(bytes));
 
             if (message_length > 0)
             {
                 if (connection.encrypted)
-                    connection.cipher.decrypt(bytes, message_length, bytes);
+                    connection.cipher.decrypt(msg.data(), msg.size(), msg.data());
 
-                Buffer buf(bytes, 0, message_length);
+                Buffer buf(msg.data(), 0, msg.size());
+                msg.clear();
                 buf.size = buf.readVarInt();
 
                 if (connection.compressed)
@@ -135,32 +145,7 @@ namespace COMiC::Network
 
     void sendPacket(ClientNetInfo &connection, Buffer &buf)
     {
-        bool large = buf.length() >= Compression::COMPRESSION_THRESHOLD;
-        if (large && connection.compressed)
-        {
-            // Compressed packet format (https://www.reddit.com/r/admincraft/comments/2agvxn/how_compression_works):
-            // 1. Packet total length (VarInt);
-            // 2. Uncompressed packet data length (VarInt) -- zero if uncompressed;
-            // 3. Packet data.
-
-            std::string deflated;
-            connection.deflater.compress(buf.data(), buf.length(), deflated);
-            memcpy(buf.data(), deflated.data(), deflated.length());
-
-            buf.index = Buffer::DATA_START + deflated.length();
-        }
-
-        buf.prepare();
-
-        if (connection.compressed && !large)
-        {
-            buf.size++;
-            buf.index--;
-        }
-
-        if (connection.encrypted)
-            connection.cipher.encrypt(buf.bytes + buf.index, buf.size, buf.bytes + buf.index);
-
+        buf.prepare(connection);
         send(connection.socket->socket, (char *) (buf.bytes + buf.index), (int) buf.size, 0);
     }
 

@@ -61,6 +61,7 @@ namespace COMiC::Network
 
         buf.writePacketID(QUERY_RESPONSE_S2C_PACKET_ID);
         buf.writeString(str, 32767);
+
         sendPacket(connection, buf);
     }
 
@@ -70,6 +71,7 @@ namespace COMiC::Network
 
         buf.writePacketID(QUERY_PONG_S2C_PACKET_ID);
         buf.writeLong(payload);
+
         sendPacket(connection, buf);
     }
 
@@ -90,12 +92,25 @@ namespace COMiC::Network
         sendPacket(connection, buf);
     }
 
+    void ServerNetManager::sendSetCompressionPacket(ClientNetInfo &connection, I32 threshold)
+    {
+        Buffer buf;
+
+        buf.writePacketID(LOGIN_COMPRESSION_S2C_PACKET_ID);
+        buf.writeVarInt(threshold);
+
+        sendPacket(connection, buf);
+
+        connection.compressed = true;
+    }
+
     void ServerNetManager::sendHeldItemChangePacket(ClientNetInfo &connection)
     {
         Buffer buf;
 
         buf.writePacketID(HELD_ITEM_CHANGE_S2C_PACKET_ID);
         buf.write(4); // Selected hotbar shot
+
         sendPacket(connection, buf);
     }
 }

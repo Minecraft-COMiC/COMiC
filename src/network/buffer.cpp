@@ -18,7 +18,7 @@ namespace COMiC::Network
         return 5;
     }
 
-    void Buffer::prepare()
+    void Buffer::prependSize()
     {
         USize data_size = this->index - DATA_START, offset = varIntSize((I32) data_size);
 
@@ -26,6 +26,40 @@ namespace COMiC::Network
         writeVarInt((I32) data_size);
         this->index = DATA_START - offset;
         this->size = data_size + offset;
+    }
+
+    void Buffer::prepare(ClientNetInfo &connection)
+    {
+        if (connection.compressed)
+        {
+            auto data_size = this->length();
+            if (data_size >= Compression::COMPRESSION_THRESHOLD)
+            {
+                // Compressed packet format (https://www.reddit.com/r/admincraft/comments/2agvxn/how_compression_works):
+                // 1. Total packet length (VarInt);
+                // 2. Uncompressed packet data length (VarInt) - zero if uncompressed;
+                // 3. Packet data.
+
+                std::string deflated;
+                connection.deflater.compress(this->data(), data_size, deflated);
+                this->index = Buffer::DATA_START;
+                this->writeVarInt((I32) data_size);
+                memcpy(this->data() + this->index, deflated.data(), deflated.length());
+
+                this->skip(deflated.length());
+            }
+            else
+            {
+                this->skip(1);
+                memmove(this->data() + 1, this->data(), data_size);
+                this->bytes[Buffer::DATA_START] = 0;
+            }
+        }
+
+        this->prependSize();
+
+        if (connection.encrypted)
+            connection.cipher.encrypt(this->bytes + this->index, this->size, this->bytes + this->index);
     }
 
     void Buffer::skip(USize count)

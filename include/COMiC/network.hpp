@@ -237,7 +237,9 @@ namespace COMiC::Network
             delete[] bytes;
         }
 
-        void prepare();
+        void prependSize();
+
+        void prepare(ClientNetInfo &connection);
 
         void skip(USize count);
 
@@ -321,6 +323,8 @@ namespace COMiC::Network
         static void sendLoginSuccessPacket(ClientNetInfo &connection);
 
         static void sendGameJoinPacket(ClientNetInfo &connection);
+
+        static void sendSetCompressionPacket(ClientNetInfo &connection, I32 threshold);
 
         // Status:
         static void sendStatusResponsePacket(ClientNetInfo &connection);

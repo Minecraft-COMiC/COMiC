@@ -35,9 +35,11 @@ namespace COMiC::Network
                 break;
             case LOGIN_HELLO_C2S_PACKET_ID:
                 connection.username = buf.readString(16);
-                std::cout << "Username: " << connection.username << std::endl;
-
                 sendRequestEncryptionPacket(connection);
+
+                sendSetCompressionPacket(connection, Compression::COMPRESSION_THRESHOLD);
+                sendLoginSuccessPacket(connection);
+                sendGameJoinPacket(connection);
 
                 break;
             case LOGIN_KEY_C2S_PACKET_ID:
@@ -51,8 +53,6 @@ namespace COMiC::Network
                 break;
             case HELD_ITEM_CHANGE_S2C_PACKET_ID:
                 sendHeldItemChangePacket(connection);
-                std::cout << "Held Item Change packet sent" << std::endl;
-
                 break;
         }
 
@@ -108,11 +108,5 @@ namespace COMiC::Network
         {
             std::cerr << e.what() << std::endl;
         }
-
-        sendLoginSuccessPacket(connection);
-        std::cout << "Login Success packet sent" << std::endl;
-
-        sendGameJoinPacket(connection);
-        std::cout << "Join Game packet sent" << std::endl;
     }
 }
