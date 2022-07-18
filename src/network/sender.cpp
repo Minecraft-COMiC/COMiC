@@ -1,9 +1,10 @@
+#include <nlohmann/json.hpp>
 #include <COMiC/network.hpp>
 #include <COMiC/crypto.hpp>
 
 namespace COMiC::Network
 {
-    void NetManager::sendRequestEncryptionPacket(ClientNetInfo &connection) const
+    void ServerNetManager::sendRequestEncryptionPacket(ClientNetInfo &connection) const
     {
         Byte nonce[4];
         COMiC::Crypto::secureBytes(nonce, 4);
@@ -20,7 +21,7 @@ namespace COMiC::Network
         sendPacket(connection, buf);
     }
 
-    void NetManager::sendLoginSuccessPacket(ClientNetInfo &connection)
+    void ServerNetManager::sendLoginSuccessPacket(ClientNetInfo &connection)
     {
         Buffer buf;
 
@@ -34,7 +35,45 @@ namespace COMiC::Network
         connection.state = PLAY;
     }
 
-    void NetManager::sendGameJoinPacket(ClientNetInfo &connection)
+    // https://wiki.vg/Server_List_Ping#Status_Response
+    void ServerNetManager::sendStatusResponsePacket(ClientNetInfo &connection)
+    {
+        std::string str; // String representation of JSON-response
+        try
+        {
+            nlohmann::json response;
+            response["version"]["name"] = "1.14.4";
+            response["version"]["protocol"] = 498;
+
+            response["players"]["max"] = 20;
+            response["players"]["online"] = 0;
+
+            response["description"]["text"] = "A COMiC Server";
+
+            str = nlohmann::to_string(response);
+        }
+        catch (std::exception &e)
+        {
+            std::cerr << e.what() << std::endl;
+        }
+
+        Buffer buf;
+
+        buf.writePacketID(QUERY_RESPONSE_S2C_PACKET_ID);
+        buf.writeString(str, 32767);
+        sendPacket(connection, buf);
+    }
+
+    void ServerNetManager::sendPongPacket(ClientNetInfo &connection, I64 payload)
+    {
+        Buffer buf;
+
+        buf.writePacketID(QUERY_PONG_S2C_PACKET_ID);
+        buf.writeLong(payload);
+        sendPacket(connection, buf);
+    }
+
+    void ServerNetManager::sendGameJoinPacket(ClientNetInfo &connection)
     {
         Buffer buf;
 
@@ -51,14 +90,12 @@ namespace COMiC::Network
         sendPacket(connection, buf);
     }
 
-    void NetManager::sendHeldItemChangePacket(ClientNetInfo &connection)
+    void ServerNetManager::sendHeldItemChangePacket(ClientNetInfo &connection)
     {
         Buffer buf;
 
         buf.writePacketID(HELD_ITEM_CHANGE_S2C_PACKET_ID);
-
         buf.write(4); // Selected hotbar shot
-
         sendPacket(connection, buf);
     }
 }

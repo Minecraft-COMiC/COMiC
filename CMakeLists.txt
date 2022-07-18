@@ -18,12 +18,13 @@ add_library(
 )
 
 find_package(OpenSSL REQUIRED)
+find_package(nlohmann_json REQUIRED)
+find_package(ZLIB REQUIRED)
 
 target_include_directories(__COMiC_Headers INTERFACE ./include)
-target_link_libraries(__COMiC_Headers INTERFACE OpenSSL::Crypto)
+target_link_libraries(__COMiC_Headers INTERFACE OpenSSL::Crypto nlohmann_json ZLIB::ZLIB)
 
 add_library(COMiC::Headers ALIAS __COMiC_Headers)
-
 
 add_library(
         core

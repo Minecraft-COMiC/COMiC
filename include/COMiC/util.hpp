@@ -33,7 +33,7 @@ namespace COMiC::Util
             this->lsb = lsb_;
         }
 
-        explicit UUID(const std::string &str, bool dashes) noexcept;
+        explicit UUID(const std::string &str) noexcept;
 
         static UUID random();
 

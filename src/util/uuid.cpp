@@ -6,11 +6,10 @@
 
 namespace COMiC::Util
 {
-    UUID::UUID(const std::string &str, bool dashes) noexcept
+    UUID::UUID(const std::string &str) noexcept
     {
         auto copy = str;
-        if (dashes)
-            copy.erase(std::remove(copy.begin(), copy.end(), '-'), copy.end());
+        copy.erase(std::remove(copy.begin(), copy.end(), '-'), copy.end());
 
         U64 tmp = 0;
         std::from_chars(copy.data(), copy.data() + 8, this->msb, 16);

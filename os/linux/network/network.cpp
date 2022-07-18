@@ -18,19 +18,19 @@ namespace COMiC::Network
         delete this->address;
     }
 
-    NetManager::NetManager()
+    ServerNetManager::ServerNetManager()
     {
         this->address = new OS::InetAddr();
         this->socket = new OS::Socket();
     }
 
-    NetManager::~NetManager()
+    ServerNetManager::~ServerNetManager()
     {
         delete this->address;
         delete this->socket;
     }
 
-    void init(NetManager &server)
+    void init(ServerNetManager &server)
     {
         std::cout << "Creating socket... ";
         if ((server.socket->socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
@@ -54,12 +54,12 @@ namespace COMiC::Network
         std::cout << "Done" << std::endl;
     }
 
-    void listenToConnections(const NetManager& server, ClientNetInfo &client)
+    void listenToConnections(const ServerNetManager& server, ClientNetInfo &client)
     {
         // Listen to incoming connections:
         if (listen(server.socket->socket, 3) < 0)
         {
-            std::cerr << "Listen failed: " << strerror(errno) << std::endl;
+            std::cerr << "listen() failed: " << strerror(errno) << std::endl;
             exit(1);
         }
 
@@ -115,7 +115,7 @@ namespace COMiC::Network
         send(connection.socket->socket, buf.bytes + buf.index, (size_t) buf.size, 0);
     }
 
-    void finalize(const NetManager& server)
+    void finalize(const ServerNetManager& server)
     {
         close(server.socket->socket);
     }

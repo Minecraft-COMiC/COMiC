@@ -145,7 +145,7 @@ namespace COMiC::Network
 
     I64 Buffer::readLong()
     {
-        return (I64) (((readInt() & 0xFFFFFFFFULL) << 32) | (readInt() & 0xFFFFFFFFUL));
+        return (I64) (((readInt() & 0xFFFFFFFFULL) << 32) | (readInt() & 0xFFFFFFFFULL));
     }
 
     void Buffer::writeLong(I64 value)

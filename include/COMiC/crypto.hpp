@@ -23,11 +23,11 @@
 namespace COMiC::Crypto
 {
     // For internal use only
-    static inline void _print_error(const char *format)
+    static inline void _print_error(const std::string &msg)
     {
         char str[256];
         ERR_error_string_n(ERR_get_error(), str, sizeof(str));
-        std::cerr << format << str << std::endl;
+        std::cerr << msg << str << std::endl;
     }
 
     static inline void init()
@@ -60,7 +60,7 @@ namespace COMiC::Crypto
             return;
         }
 
-        std::cout <<"Using OpenSSL " OPENSSL_VERSION_STR " as COMiC::Crypto API" << std::endl;
+        std::cout << "Using OpenSSL " OPENSSL_VERSION_STR " as COMiC::Crypto API" << std::endl;
     }
 
     static inline void secureBytes(Byte *out, USize len)
@@ -99,9 +99,9 @@ namespace COMiC::Crypto
                 _print_error("MD5#final() failed: ");
         }
 
-        static void hash(const char *str, Byte out[MD5_DIGEST_LENGTH])
+        static void hash(const std::string &str, Byte out[MD5_DIGEST_LENGTH])
         {
-            if (EVP_Digest(str, strlen(str), out, nullptr, EVP_md5(), nullptr) != 1)
+            if (EVP_Digest(str.c_str(), str.length(), out, nullptr, EVP_md5(), nullptr) != 1)
                 _print_error("MD5#hash() failed: ");
         }
 
@@ -143,13 +143,13 @@ namespace COMiC::Crypto
                 _print_error("SHA1#final() failed: ");
         }
 
-        static void hash(const char *str, Byte out[SHA_DIGEST_LENGTH])
+        static void hash(const std::string &str, Byte out[SHA_DIGEST_LENGTH])
         {
-            if (EVP_Digest(str, strlen(str), out, nullptr, EVP_sha1(), nullptr) != 1)
+            if (EVP_Digest(str.c_str(), str.length(), out, nullptr, EVP_sha1(), nullptr) != 1)
                 _print_error("SHA1#hash() failed: ");
         }
 
-        static void hexdigest(const Byte digest[SHA_DIGEST_LENGTH], char *out)
+        static void hexdigest(const Byte digest[SHA_DIGEST_LENGTH], std::string &out)
         {
             Byte copy[SHA_DIGEST_LENGTH];
             memcpy(copy, digest, SHA_DIGEST_LENGTH);
@@ -207,15 +207,15 @@ namespace COMiC::Crypto
             U8 offset;
             if (ans[0] == '-')
             {
-                out[0] = '-';
+                out = '-';
                 offset = 1;
             }
             else offset = 0;
 
             if (ans[offset] == '0')
-                memcpy(out + offset, ans + offset + 1, size - offset - 1);
+                out.append(ans + offset + 1, size - offset - 1);
             else
-                memcpy(out, ans, size);
+                out.append(ans, size);
 
             BN_free(bn);
             OPENSSL_free(ans);
@@ -234,9 +234,7 @@ namespace COMiC::Crypto
         EVP_CIPHER_CTX *encryptor, *decryptor;
 
     public:
-        AES() = default;
-
-        AES(Byte key[AES_BLOCK_SIZE], Byte iv[AES_BLOCK_SIZE])
+        AES()
         {
             this->encryptor = EVP_CIPHER_CTX_new();
             if (this->encryptor == nullptr)
@@ -251,7 +249,10 @@ namespace COMiC::Crypto
                 _print_error("Could not create decryption cipher context for AES: ");
                 return;
             }
+        }
 
+        void init(Byte key[AES_BLOCK_SIZE], Byte iv[AES_BLOCK_SIZE])
+        {
             if (EVP_EncryptInit(this->encryptor, EVP_aes_128_cfb8(), key, iv) != 1)
                 _print_error("AES encryption initialization failed: ");
 
@@ -297,7 +298,7 @@ namespace COMiC::Crypto
 
         using KeyPair = EVP_PKEY;
 
-        static void generateKeyPair(KeyPair **keypair)
+        static void generateKeyPair(KeyPair *&keypair)
         {
             EVP_PKEY_CTX *ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_RSA, nullptr);
             if (ctx == nullptr)
@@ -314,13 +315,13 @@ namespace COMiC::Crypto
             if (EVP_PKEY_keygen(ctx, &pkey) != 1)
                 goto ERR;
 
-            *keypair = pkey;
+            keypair = pkey;
 
             EVP_PKEY_CTX_free(ctx);
             return;
 
             ERR:
-            *keypair = nullptr;
+            keypair = nullptr;
 
             _print_error("RSA#generateKeyPair() failed: ");
 
@@ -328,7 +329,7 @@ namespace COMiC::Crypto
                 EVP_PKEY_CTX_free(ctx);
         }
 
-        static void encodePublicKey(KeyPair *key, Byte *out, USize *written)
+        static void encodePublicKey(KeyPair *key, Byte *out, USize &written)
         {
             Byte *str = nullptr;
             I32 len = i2d_PUBKEY(key, &str);
@@ -338,7 +339,7 @@ namespace COMiC::Crypto
             if (out != nullptr)
                 memcpy(out, str, len);
 
-            *written = (len <= 0 ? 0 : len);
+            written = std::max(0, len);
 
             OPENSSL_free(str);
         }
@@ -347,11 +348,11 @@ namespace COMiC::Crypto
         explicit RSA(bool encrypting)
         {
             KeyPair *keypair;
-            generateKeyPair(&keypair);
+            generateKeyPair(keypair);
 
-            encodePublicKey(keypair, nullptr, &this->keySize);
+            encodePublicKey(keypair, nullptr, this->keySize);
             this->encodedPublicKey = new Byte[this->keySize];
-            encodePublicKey(keypair, this->encodedPublicKey, &this->keySize);
+            encodePublicKey(keypair, this->encodedPublicKey, this->keySize);
 
             this->cipher = EVP_PKEY_CTX_new(keypair, nullptr);
 
@@ -385,15 +386,15 @@ namespace COMiC::Crypto
             }
         }
 
-        void encrypt(const Byte *in, USize len, Byte *out, USize *written) const
+        void encrypt(const Byte *in, USize len, Byte *out, USize &written) const
         {
-            if (EVP_PKEY_encrypt(this->cipher, out, written, in, len) != 1)
+            if (EVP_PKEY_encrypt(this->cipher, out, &written, in, len) != 1)
                 _print_error("Failed to encrypt: ");
         }
 
-        void decrypt(const Byte *in, USize len, Byte *out, USize *written) const
+        void decrypt(const Byte *in, USize len, Byte *out, USize &written) const
         {
-            if (EVP_PKEY_decrypt(this->cipher, out, written, in, len) != 1)
+            if (EVP_PKEY_decrypt(this->cipher, out, &written, in, len) != 1)
                 _print_error("Failed to decrypt: ");
         }
 
@@ -415,6 +416,33 @@ namespace COMiC::Crypto
             delete[] this->encodedPublicKey;
         }
     };
+
+    namespace Base64
+    {
+        static inline void encode(const Byte *input, USize len, std::string &out)
+        {
+            auto out_len = 4 * ((len + 2) / 3);
+            auto bytes = new Byte[out_len + 1]{};
+            if (EVP_EncodeBlock(bytes, input, (int) len) != out_len)
+            {
+                _print_error("Base64#encode() failed: ");
+                delete[] bytes;
+                out = "";
+
+                return;
+            }
+
+            out = std::string((char *) bytes);
+            delete[] bytes;
+        }
+
+        // out[] must be able to hold at least 3 * len / 4 bytes
+        static inline void decode(const std::string &input, USize len, Byte *out)
+        {
+            if (EVP_DecodeBlock(out, reinterpret_cast<const Byte *>(input.data()), (int) len) != 3 * len / 4)
+                _print_error("Base64#decode() failed: ");
+        }
+    }
 }
 
 #endif // COMIC_CRYPTO_HPP

@@ -6,11 +6,12 @@
 #include <COMiC/core.hpp>
 #include <COMiC/util.hpp>
 #include <COMiC/crypto.hpp>
+#include <COMiC/compression.hpp>
 
 namespace COMiC::Network
 {
     const inline char *DEFAULT_SERVER_IP = "127.0.0.1";
-    const inline I32 DEFAULT_SERVER_PORT = 25565;
+    const inline int DEFAULT_SERVER_PORT = 25565;
 
     enum NetworkState
     {
@@ -169,7 +170,7 @@ namespace COMiC::Network
         QUERY_REQUEST_C2S_PACKET_ID = 0x200,
         QUERY_RESPONSE_S2C_PACKET_ID = 0x200,
         QUERY_PING_C2S_PACKET_ID,
-        QUERY_PONG_S2C_PACKET_ID,
+        QUERY_PONG_S2C_PACKET_ID = 0x201,
 // LOGIN:
         LOGIN_DISCONNECT_S2C_PACKET_ID = 0x300,
         LOGIN_HELLO_S2C_PACKET_ID,
@@ -178,7 +179,7 @@ namespace COMiC::Network
         LOGIN_QUERY_REQUEST_S2C_PACKET_ID,
         LOGIN_HELLO_C2S_PACKET_ID = 0x300,
         LOGIN_KEY_C2S_PACKET_ID,
-        LOGIN_QUERY_RESPONSE_C2S_PACKET_ID,
+        LOGIN_QUERY_RESPONSE_C2S_PACKET_ID
     };
 
     namespace OS
@@ -191,11 +192,14 @@ namespace COMiC::Network
     {
         OS::InetAddr *address;
         OS::Socket *socket;
-        NetworkState state{};
+        NetworkState state = HANDSHAKING;
         std::string username;
         Util::UUID uuid;
         bool encrypted = false;
         Crypto::AES cipher{};
+        bool compressed = false;
+        Compression::Deflater deflater = Compression::Deflater();
+        Compression::Inflater inflater = Compression::Inflater();
 
         ClientNetInfo();
 
@@ -204,10 +208,11 @@ namespace COMiC::Network
 
     struct Buffer
     {
-    private:
-        enum {DATA_START = 5};
+        enum
+        {
+            DATA_START = 5
+        };
 
-    public:
         Byte *bytes;
         USize index = DATA_START;
         USize size;
@@ -220,7 +225,7 @@ namespace COMiC::Network
 
         explicit Buffer(USize capacity) : size(capacity)
         {
-            this->bytes = new Byte[capacity];
+            this->bytes = new Byte[capacity]{};
         }
 
         Buffer() : Buffer(128)
@@ -287,36 +292,58 @@ namespace COMiC::Network
         PacketID readPacketID(NetworkState state);
 
         void writePacketID(PacketID id);
+
+        [[nodiscard]] Byte *data() const
+        {
+            return this->bytes + DATA_START;
+        }
+
+        [[nodiscard]] USize length() const
+        {
+            return this->index - DATA_START;
+        }
     };
 
-    struct NetManager
+    struct ServerNetManager
     {
         OS::InetAddr *address;
         OS::Socket *socket;
         Crypto::RSA rsa = Crypto::RSA(false);
 
-        NetManager();
+        ServerNetManager();
 
-        ~NetManager();
+        ~ServerNetManager();
 
+        // S -> C:
+        // Login:
         void sendRequestEncryptionPacket(ClientNetInfo &connection) const;
 
         static void sendLoginSuccessPacket(ClientNetInfo &connection);
 
         static void sendGameJoinPacket(ClientNetInfo &connection);
 
+        // Status:
+        static void sendStatusResponsePacket(ClientNetInfo &connection);
+
+        static void sendPongPacket(ClientNetInfo &connection, I64 payload);
+
+        // Play:
         static void sendHeldItemChangePacket(ClientNetInfo &connection);
 
+        // C -> S:
         void receivePacket(ClientNetInfo &connection, Buffer &buf) const;
+
+        // Login:
+        void handleEncryptionRequestPacket(ClientNetInfo &connection, Buffer &buf) const;
     };
 
-    void init(NetManager &server);
+    void init(ServerNetManager &server);
 
-    void listenToConnections(const NetManager& server, ClientNetInfo &client);
+    void listenToConnections(const ServerNetManager &server, ClientNetInfo &connection);
 
-    void sendPacket(const ClientNetInfo &connection, Buffer &buf);
+    void sendPacket(ClientNetInfo &connection, Buffer &buf);
 
-    void finalize(const NetManager& server);
+    void finalize(const ServerNetManager &server);
 
     void sendHTTPGet(const std::string &server, const std::string &page, std::string &out);
 }

@@ -5,115 +5,168 @@
 
 namespace COMiC::Network
 {
-    void init(NetManager *server)
+    ClientNetInfo::ClientNetInfo()
     {
-        WSADATA wsa;
-        printf("Initializing WinSock... ");
-        if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
-        {
-            printf("Failed: %d", WSAGetLastError());
-            exit(1);
-        }
-        puts("Done");
-
-        printf("Creating socket... ");
-        server->socket = new OS::Socket();
-
-        if ((server->socket->socket = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
-        {
-            printf("Could not create socket: %d", WSAGetLastError());
-            exit(1);
-        }
-        puts("Done");
-
-        // Prepare the server structure:
-        server->address = new OS::InetAddr();
-        server->address->address.sin_family = AF_INET;
-        InetPton(AF_INET, DEFAULT_SERVER_IP, &server->address->address.sin_addr.s_addr);
-        server->address->address.sin_port = htons(DEFAULT_SERVER_PORT);
-
-        printf("Binding... ");
-        if (bind(server->socket->socket, (sockaddr *) &server->address->address, sizeof(server->address->address)) ==
-            SOCKET_ERROR)
-        {
-//            printf("Bind failed with error code: %d", WSAGetLastError());
-            wchar_t *s = nullptr;
-            FormatMessageW(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                           nullptr, WSAGetLastError(),
-                           MAKELANGID(LANG_ENGLISH, SUBLANG_ENGLISH_US),
-                           (LPWSTR) &s, 100, nullptr);
-            fprintf(stderr, "%S\n", s);
-            LocalFree(s);
-
-            exit(1);
-        }
-        puts("Done");
+        this->socket = new OS::Socket();
+        this->address = new OS::InetAddr();
     }
 
-    void listenToConnections(NetManager server, ClientNetInfo *client)
+    ClientNetInfo::~ClientNetInfo()
+    {
+        delete this->socket;
+        delete this->address;
+    }
+
+    ServerNetManager::ServerNetManager()
+    {
+        this->address = new OS::InetAddr();
+        this->socket = new OS::Socket();
+    }
+
+    ServerNetManager::~ServerNetManager()
+    {
+        delete this->address;
+        delete this->socket;
+    }
+
+    void init(ServerNetManager &server)
+    {
+        WSADATA wsa;
+
+        std::cout << "Initializing WinSock... ";
+        if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
+        {
+            std::cerr << "Could not initialize WinSock: " << WSAGetLastError() << std::endl;
+            exit(1);
+        }
+        std::cout << "Done" << std::endl;
+
+        std::cout << "Creating socket... ";
+        if ((server.socket->socket = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
+        {
+            std::cerr << "Could not create socket: " << WSAGetLastError() << std::endl;
+            exit(1);
+        }
+        std::cout << "Done" << std::endl;
+
+        // Prepare the server structure:
+        server.address->address.sin_family = AF_INET;
+        InetPton(AF_INET, DEFAULT_SERVER_IP, &server.address->address.sin_addr.s_addr);
+        server.address->address.sin_port = htons(DEFAULT_SERVER_PORT);
+
+        std::cout << "Binding... ";
+        if (bind(
+                server.socket->socket,
+                (sockaddr *) &server.address->address,
+                sizeof(server.address->address)
+        ) == SOCKET_ERROR)
+        {
+            std::cerr << "Bind failed with error code: " << WSAGetLastError() << std::endl;
+            exit(1);
+        }
+        std::cout << "Done" << std::endl;
+    }
+
+    void listenToConnections(const ServerNetManager &server, ClientNetInfo &connection)
     {
         // Listen to incoming connections:
-        listen(server.socket->socket, 3);
-
-        puts("Waiting for incoming connections...");
-
-        // Accept incoming connection:
-        client->address = new OS::InetAddr();
-        int c = sizeof(client->address->address);
-        client->socket = new OS::Socket();
-        client->socket->socket = (int) accept(server.socket->socket, (sockaddr *) &client->address->address, &c);
-        if (client->socket->socket == INVALID_SOCKET)
+        if (listen(server.socket->socket, 3) == SOCKET_ERROR)
         {
-            printf("accept() failed: %d", WSAGetLastError());
+            std::cerr << "listen() failed with error code: " << WSAGetLastError() << std::endl;
             exit(1);
         }
 
-        puts("Connection accepted");
+        std::cout << "Waiting for incoming connections..." << std::flush;
 
+        // Accept incoming connection:
+        int c = sizeof(connection.address->address);
+        connection.socket->socket = (int) accept(server.socket->socket, (sockaddr *) &connection.address->address, &c);
+        if (connection.socket->socket == INVALID_SOCKET)
+        {
+            std::cerr << "accept() failed: " << WSAGetLastError() << std::endl;
+            exit(1);
+        }
+
+        std::cout << "Connection accepted" << std::endl;
+
+        // TODO: Receive full data
         int message_length;
-        Byte bytes[512];
+        Byte bytes[1024];
+        std::string msg;
         while (true)
         {
-            message_length = recv(client->socket->socket, (char *) bytes, sizeof(bytes), 0);
+            message_length = recv(connection.socket->socket, (char *) bytes, sizeof(bytes), 0);
 
             if (message_length > 0)
             {
-                if (client->encrypted)
-                    client->cipher->decrypt(bytes, message_length, bytes);
+                if (connection.encrypted)
+                    connection.cipher.decrypt(bytes, message_length, bytes);
 
                 Buffer buf(bytes, 0, message_length);
                 buf.size = buf.readVarInt();
 
-                server.receivePacket(client, &buf);
+                if (connection.compressed)
+                {
+                    I32 data_len = buf.readVarInt();
+
+                    if (data_len > 0)
+                    {
+                        std::string inflated;
+                        connection.inflater.decompress(buf.bytes + buf.index, buf.size - buf.index, inflated);
+                        memcpy(buf.bytes, inflated.data(), inflated.length());
+                        buf.index = 0;
+                    }
+                }
+
+                server.receivePacket(connection, buf);
             }
             else if (message_length == 0)
             {
-                puts("Connection closed");
+                std::cout << "Connection closed" << std::endl;
                 break;
             }
             else
             {
-                printf("Failed receiving data from client: %d\n", WSAGetLastError());
+                std::cerr << "Failed receiving data from connection: " << WSAGetLastError() << std::endl;
                 break;
             }
         }
     }
 
-    void sendPacket(ClientNetInfo *connection, Buffer *buf)
+    void sendPacket(ClientNetInfo &connection, Buffer &buf)
     {
-        buf->prepare();
+        bool large = buf.length() >= Compression::COMPRESSION_THRESHOLD;
+        if (large && connection.compressed)
+        {
+            // Compressed packet format (https://www.reddit.com/r/admincraft/comments/2agvxn/how_compression_works):
+            // 1. Packet total length (VarInt);
+            // 2. Uncompressed packet data length (VarInt) -- zero if uncompressed;
+            // 3. Packet data.
 
-        if (connection->encrypted)
-            connection->cipher->encrypt(buf->bytes + buf->index, buf->size, buf->bytes + buf->index);
+            std::string deflated;
+            connection.deflater.compress(buf.data(), buf.length(), deflated);
+            memcpy(buf.data(), deflated.data(), deflated.length());
 
-        send(connection->socket->socket, (char *) (buf->bytes + buf->index), (int) buf->size, 0);
+            buf.index = Buffer::DATA_START + deflated.length();
+        }
+
+        buf.prepare();
+
+        if (connection.compressed && !large)
+        {
+            buf.size++;
+            buf.index--;
+        }
+
+        if (connection.encrypted)
+            connection.cipher.encrypt(buf.bytes + buf.index, buf.size, buf.bytes + buf.index);
+
+        send(connection.socket->socket, (char *) (buf.bytes + buf.index), (int) buf.size, 0);
     }
 
-    void finalize(NetManager server)
+    void finalize(const ServerNetManager &server)
     {
         closesocket(server.socket->socket);
-        delete server.address;
-        delete server.socket;
         WSACleanup();
     }
 
@@ -130,7 +183,7 @@ namespace COMiC::Network
 
         if (hInternet == nullptr)
         {
-            fprintf(stderr, "sendHTTPGet(): InternetOpen() failed: %lu", GetLastError());
+            std::cerr << "sendHTTPGet(): InternetOpen() failed: " << GetLastError() << std::endl;
             return;
         }
 
@@ -149,7 +202,7 @@ namespace COMiC::Network
         if (hConnect == nullptr)
         {
             InternetCloseHandle(hInternet);
-            fprintf(stderr, "sendHTTPGet(): InternetConnect() to %s failed: %lu", server.c_str(), GetLastError());
+            std::cerr << "sendHTTPGet(): InternetConnect() to " << server << " failed: " << GetLastError() << std::endl;
             return;
         }
 
@@ -169,8 +222,9 @@ namespace COMiC::Network
         {
             InternetCloseHandle(hInternet);
             InternetCloseHandle(hConnect);
-            fprintf(stderr, "sendHTTPGet(): HttpOpenRequest() to %s%s failed: %lu", server.c_str(), page.c_str(),
-                    GetLastError());
+
+            std::cerr << "sendHTTPGet(): HttpOpenRequest() to " << server << page
+                      << " failed: " << GetLastError() << std::endl;
             return;
         }
 
@@ -196,8 +250,8 @@ namespace COMiC::Network
             }
         }
         else
-            fprintf(stderr, "sendHTTPGet(): HttpSendRequest() to %s%s failed: %lu", server.c_str(), page.c_str(),
-                    GetLastError());
+            std::cerr << "sendHTTPGet(): HttpSendRequest() to " << server << page
+                      << " failed: " << GetLastError() << std::endl;
 
         // Close request:
         InternetCloseHandle(hRequest);
