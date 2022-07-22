@@ -37,7 +37,7 @@ namespace COMiC::Network
                 connection.username = buf.readString(16);
                 sendRequestEncryptionPacket(connection);
 
-                sendSetCompressionPacket(connection, Compression::COMPRESSION_THRESHOLD);
+                sendSetCompressionPacket(connection, COMiC::NETWORK_COMPRESSION_THRESHOLD);
                 sendLoginSuccessPacket(connection);
                 sendGameJoinPacket(connection);
 
@@ -65,11 +65,11 @@ namespace COMiC::Network
     void ServerNetManager::handleEncryptionRequestPacket(ClientNetInfo &connection, Buffer &buf) const
     {
         I32 enc_len = buf.readVarInt();
-        Byte *enc = new Byte[enc_len];
+        Byte *enc = new(std::nothrow) Byte[enc_len];
         buf.readByteArray(enc, enc_len);
 
         I32 token_len = buf.readVarInt();
-        Byte *token = new Byte[token_len];
+        Byte *token = new(std::nothrow) Byte[token_len];
         buf.readByteArray(token, token_len);
 
         USize len;
@@ -86,7 +86,7 @@ namespace COMiC::Network
         Byte digest[SHA_DIGEST_LENGTH];
         sha1.update((Byte *) "", strlen("")); // Server id
         sha1.update(key, sizeof(key)); // AES key
-        sha1.update(this->rsa.getEncodedPublicKey(), this->rsa.getEncodedKeySize());
+        sha1.update(this->rsa.getEncodedPublicKey(), this->rsa.getEncodedKeySize()); // Server public key
         sha1.final(digest);
 
         std::string hexdigest;

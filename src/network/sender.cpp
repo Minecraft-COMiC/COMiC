@@ -50,6 +50,21 @@ namespace COMiC::Network
 
             response["description"]["text"] = "A COMiC Server";
 
+            std::string favicon;
+            Util::readPNG("favicon.png", favicon);
+            Byte *buf = reinterpret_cast<Byte *>(favicon.data() + 16);
+            U32 width = (buf[0] << 24) + (buf[1] << 16) + (buf[2] << 8) + buf[3],
+                    height = (buf[4] << 24) + (buf[5] << 16) + (buf[6] << 8) + buf[7];
+
+            if (width == 64 && height == 64)
+            {
+                Crypto::Base64::encode((Byte *) favicon.data(), favicon.length(), favicon);
+                response["favicon"] = ("data:image/png;base64," + favicon);
+            }
+            else
+                std::cerr << "favicon must be exactly 64x64 pixels but instead is "
+                          << width << "x" << height << std::endl;
+
             str = nlohmann::to_string(response);
         }
         catch (std::exception &e)

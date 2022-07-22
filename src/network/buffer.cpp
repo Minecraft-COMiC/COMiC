@@ -33,7 +33,7 @@ namespace COMiC::Network
         if (connection.compressed)
         {
             auto data_size = this->length();
-            if (data_size >= Compression::COMPRESSION_THRESHOLD)
+            if (data_size >= COMiC::NETWORK_COMPRESSION_THRESHOLD)
             {
                 // Compressed packet format (https://www.reddit.com/r/admincraft/comments/2agvxn/how_compression_works):
                 // 1. Total packet length (VarInt);

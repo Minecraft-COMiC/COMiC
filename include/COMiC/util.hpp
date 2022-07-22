@@ -3,6 +3,7 @@
 
 #include <string>
 #include <COMiC/core.hpp>
+#include <COMiC/crypto.hpp>
 
 namespace COMiC::Util
 {
@@ -60,6 +61,21 @@ namespace COMiC::Util
 
         ~UUID() = default;
     };
+
+    static inline void readPNG(const std::string &filename, std::string &out)
+    {
+        std::ifstream fin(filename, std::ios::in | std::ios::binary);
+        if (!fin.good())
+        {
+            std::cerr << "readPNG() failed: unable to open " << filename << std::endl;
+            return;
+        }
+
+        std::ostringstream oss;
+        oss << fin.rdbuf();
+
+        out = oss.str();
+    }
 }
 
 #endif // COMIC_UTIL_HPP

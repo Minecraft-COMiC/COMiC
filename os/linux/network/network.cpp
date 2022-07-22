@@ -9,8 +9,8 @@ namespace COMiC::Network
 {
     ClientNetInfo::ClientNetInfo()
     {
-        this->socket = new OS::Socket();
-        this->address = new OS::InetAddr();
+        this->socket = new(std::nothrow) OS::Socket();
+        this->address = new(std::nothrow) OS::InetAddr();
     }
 
     ClientNetInfo::~ClientNetInfo()
@@ -21,8 +21,8 @@ namespace COMiC::Network
 
     ServerNetManager::ServerNetManager()
     {
-        this->address = new OS::InetAddr();
-        this->socket = new OS::Socket();
+        this->address = new(std::nothrow) OS::InetAddr();
+        this->socket = new(std::nothrow) OS::Socket();
     }
 
     ServerNetManager::~ServerNetManager()
@@ -43,8 +43,8 @@ namespace COMiC::Network
 
         // Prepare the server structure:
         server.address->address.sin_family = AF_INET;
-        inet_pton(AF_INET, DEFAULT_SERVER_IP, &server.address->address.sin_addr.s_addr);
-        server.address->address.sin_port = htons(DEFAULT_SERVER_PORT);
+        inet_pton(AF_INET, COMiC::SERVER_IP.c_str(), &server.address->address.sin_addr.s_addr);
+        server.address->address.sin_port = htons(COMiC::SERVER_PORT);
 
         std::cout << "Binding... ";
         if (bind(server.socket->socket, (sockaddr *) &server.address->address, sizeof(server.address->address)) < 0)

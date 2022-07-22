@@ -2,11 +2,14 @@
 #include <COMiC/crypto.hpp>
 #include <COMiC/network.hpp>
 #include <COMiC/compression.hpp>
+#include <fstream>
 
 using namespace COMiC;
 
 int main()
 {
+    loadConfig();
+
     Network::ServerNetManager server;
     Network::init(server);
 

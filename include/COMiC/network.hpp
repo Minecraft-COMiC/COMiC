@@ -10,9 +10,6 @@
 
 namespace COMiC::Network
 {
-    const inline char *DEFAULT_SERVER_IP = "127.0.0.1";
-    const inline int DEFAULT_SERVER_PORT = 25565;
-
     enum NetworkState
     {
         HANDSHAKING = -1,
@@ -219,13 +216,13 @@ namespace COMiC::Network
 
         Buffer(const Byte *bytes, USize index, USize size) : index(index), size(size)
         {
-            this->bytes = new Byte[size];
+            this->bytes = new(std::nothrow) Byte[size];
             std::memcpy(this->bytes, bytes, size);
         }
 
         explicit Buffer(USize capacity) : size(capacity)
         {
-            this->bytes = new Byte[capacity]{};
+            this->bytes = new(std::nothrow) Byte[capacity]{};
         }
 
         Buffer() : Buffer(128)

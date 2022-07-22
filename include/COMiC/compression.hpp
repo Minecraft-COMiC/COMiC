@@ -9,9 +9,9 @@ namespace COMiC::Compression
     enum
     {
         CHUNK_SIZE = 16384,
-        COMPRESSION_THRESHOLD = 256
     };
 
+    // TODO: handle errors
     class Deflater
     {
     private:
@@ -80,8 +80,8 @@ namespace COMiC::Compression
 
             }
 
-            in = new char[CHUNK_SIZE];
-            out = new char[CHUNK_SIZE];
+            in = new(std::nothrow) char[CHUNK_SIZE];
+            out = new(std::nothrow) char[CHUNK_SIZE];
         }
 
         void compress(const Byte *input, USize len, std::string &output)
@@ -118,8 +118,8 @@ namespace COMiC::Compression
 
             }
 
-            in = new char[CHUNK_SIZE];
-            out = new char[CHUNK_SIZE];
+            in = new(std::nothrow) char[CHUNK_SIZE];
+            out = new(std::nothrow) char[CHUNK_SIZE];
         }
 
         void decompress(const Byte *input, USize len, std::string &result)

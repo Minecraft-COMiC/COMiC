@@ -143,7 +143,7 @@ namespace COMiC::Crypto
                 _print_error("SHA1#final() failed: ");
         }
 
-        static void hash(const std::string &str, Byte out[SHA_DIGEST_LENGTH])
+        static void hash(Byte out[SHA_DIGEST_LENGTH], const std::string &str)
         {
             if (EVP_Digest(str.c_str(), str.length(), out, nullptr, EVP_sha1(), nullptr) != 1)
                 _print_error("SHA1#hash() failed: ");
@@ -351,7 +351,7 @@ namespace COMiC::Crypto
             generateKeyPair(keypair);
 
             encodePublicKey(keypair, nullptr, this->keySize);
-            this->encodedPublicKey = new Byte[this->keySize];
+            this->encodedPublicKey = new(std::nothrow) Byte[this->keySize];
             encodePublicKey(keypair, this->encodedPublicKey, this->keySize);
 
             this->cipher = EVP_PKEY_CTX_new(keypair, nullptr);
@@ -422,7 +422,7 @@ namespace COMiC::Crypto
         static inline void encode(const Byte *input, USize len, std::string &out)
         {
             auto out_len = 4 * ((len + 2) / 3);
-            auto bytes = new Byte[out_len + 1]{};
+            auto bytes = new(std::nothrow) Byte[out_len + 1]{};
             if (EVP_EncodeBlock(bytes, input, (int) len) != out_len)
             {
                 _print_error("Base64#encode() failed: ");

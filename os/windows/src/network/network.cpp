@@ -8,8 +8,8 @@ namespace COMiC::Network
 {
     ClientNetInfo::ClientNetInfo()
     {
-        this->socket = new OS::Socket();
-        this->address = new OS::InetAddr();
+        this->socket = new(std::nothrow) OS::Socket();
+        this->address = new(std::nothrow) OS::InetAddr();
     }
 
     ClientNetInfo::~ClientNetInfo()
@@ -20,8 +20,8 @@ namespace COMiC::Network
 
     ServerNetManager::ServerNetManager()
     {
-        this->address = new OS::InetAddr();
-        this->socket = new OS::Socket();
+        this->address = new(std::nothrow) OS::InetAddr();
+        this->socket = new(std::nothrow) OS::Socket();
     }
 
     ServerNetManager::~ServerNetManager()
