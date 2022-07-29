@@ -15,15 +15,32 @@ namespace COMiC::Compression
     class Deflater
     {
     private:
-        enum
-        {
-            MAXIMUM_COMPRESSION_LEVEL = 9
-        };
-
         z_stream stream{};
-        char *in, *out;
+        char *in = nullptr, *out = nullptr;
 
-        void start(const Byte *input, USize len, std::string &result)
+    public:
+        Deflater() = default;
+
+        IfError init()
+        {
+            this->stream.zalloc = Z_NULL;
+            this->stream.zfree = Z_NULL;
+            this->stream.opaque = Z_NULL;
+
+            if (deflateInit2(&this->stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, MAX_WBITS, 8, Z_DEFAULT_STRATEGY) !=
+                Z_OK)
+            {
+                std::cerr << "Deflate initialization failed: " << this->stream.msg << std::endl;
+                return FAIL;
+            }
+
+            this->in = new char[CHUNK_SIZE];
+            this->out = new char[CHUNK_SIZE];
+
+            return SUCCESS;
+        }
+
+        IfError compress(const Byte *input, USize len, std::string &output)
         {
             for (U32 i = 0; i < len; i += CHUNK_SIZE)
             {
@@ -37,64 +54,38 @@ namespace COMiC::Compression
                     this->stream.avail_out = CHUNK_SIZE;
                     this->stream.next_out = (Bytef *) this->out;
 
-                    switch (deflate(&this->stream, Z_NO_FLUSH))
+                    switch (deflate(&this->stream, Z_FINISH))
                     {
-
+                        case Z_STREAM_END:
+                        case Z_OK:
+                        case Z_BUF_ERROR:
+                            break;
+                        default:
+                            std::cerr << "Zlib compression failed: " << this->stream.msg << std::endl;
+                            return FAIL;
                     }
 
-                    result += std::string(this->out, CHUNK_SIZE - this->stream.avail_out);
+                    output += std::string(this->out, CHUNK_SIZE - this->stream.avail_out);
                 }
                 while (this->stream.avail_out == 0);
             }
-        }
 
-        void finish(std::string &result)
-        {
-            this->stream.avail_in = 0;
-            this->stream.next_in = (Bytef *) this->in;
-
-            do
+            if (deflateReset(&this->stream) != Z_OK)
             {
-                this->stream.avail_out = CHUNK_SIZE;
-                this->stream.next_out = (Bytef *) this->out;
-
-                switch (deflate(&this->stream, Z_FINISH))
-                {
-
-                }
-
-                result += std::string(this->out, CHUNK_SIZE - this->stream.avail_out);
-            }
-            while (this->stream.avail_out == 0);
-        }
-
-    public:
-        Deflater()
-        {
-            this->stream.zalloc = Z_NULL;
-            this->stream.zfree = Z_NULL;
-            this->stream.opaque = Z_NULL;
-
-            switch (deflateInit(&this->stream, MAXIMUM_COMPRESSION_LEVEL))
-            {
-
+                std::cerr << "Failed to reset Deflater: " << this->stream.msg << std::endl;
+                return FAIL;
             }
 
-            in = new(std::nothrow) char[CHUNK_SIZE];
-            out = new(std::nothrow) char[CHUNK_SIZE];
-        }
-
-        void compress(const Byte *input, USize len, std::string &output)
-        {
-            start(input, len, output);
-            finish(output);
-
-            deflateReset(&this->stream);
+            return SUCCESS;
         }
 
         ~Deflater()
         {
-            deflateEnd(&this->stream);
+            if (deflateEnd(&this->stream) != Z_OK)
+                std::cerr << "An error occurred on while finalising Deflater: " << this->stream.msg << std::endl;
+
+            delete[] this->in;
+            delete[] this->out;
         }
     };
 
@@ -102,10 +93,12 @@ namespace COMiC::Compression
     {
     private:
         z_stream stream{};
-        char *in, *out;
+        char *in = nullptr, *out = nullptr;
 
     public:
-        Inflater()
+        Inflater() = default;
+
+        IfError init()
         {
             this->stream.zalloc = Z_NULL;
             this->stream.zfree = Z_NULL;
@@ -113,16 +106,19 @@ namespace COMiC::Compression
             this->stream.avail_in = 0;
             this->stream.next_in = Z_NULL;
 
-            switch (inflateInit(&this->stream))
+            if (inflateInit2(&this->stream, MAX_WBITS) != Z_OK)
             {
-
+                std::cerr << "Inflater initialization failed: " << this->stream.msg << std::endl;
+                return FAIL;
             }
 
-            in = new(std::nothrow) char[CHUNK_SIZE];
-            out = new(std::nothrow) char[CHUNK_SIZE];
+            this->in = new char[CHUNK_SIZE];
+            this->out = new char[CHUNK_SIZE];
+
+            return SUCCESS;
         }
 
-        void decompress(const Byte *input, USize len, std::string &result)
+        IfError decompress(const Byte *input, USize len, std::string &output)
         {
             for (U32 i = 0; i < len; i += CHUNK_SIZE)
             {
@@ -138,26 +134,56 @@ namespace COMiC::Compression
                     this->stream.avail_out = CHUNK_SIZE;
                     this->stream.next_out = (Bytef *) this->out;
 
-                    switch (inflate(&this->stream, Z_NO_FLUSH))
+                    switch (inflate(&this->stream, Z_PARTIAL_FLUSH))
                     {
-
+                        case Z_STREAM_END:
+                        case Z_OK:
+                        case Z_NEED_DICT:
+                            break;
+                        default:
+                            std::cerr << "Zlib decompression failed: " << this->stream.msg << std::endl;
+                            return FAIL;
                     }
 
-                    result += std::string(this->out, CHUNK_SIZE - this->stream.avail_out);
+                    output += std::string(this->out, CHUNK_SIZE - this->stream.avail_out);
                 }
                 while (this->stream.avail_out == 0);
             }
 
-            inflateReset(&this->stream);
+            if (inflateReset(&this->stream) != Z_OK)
+            {
+                std::cerr << "Failed to reset Inflater: " << this->stream.msg << std::endl;
+                return FAIL;
+            }
+
+            return SUCCESS;
         }
 
         ~Inflater()
         {
-            inflateEnd(&this->stream);
+            if (inflateEnd(&this->stream) != Z_OK)
+                std::cerr << "An error occurred while finalising Inflater: " << this->stream.msg << std::endl;
+
             delete[] in;
             delete[] out;
         }
     };
+
+    inline Inflater INFLATER;
+    inline Deflater DEFLATER;
+
+    static inline IfError init()
+    {
+        if (INFLATER.init() || DEFLATER.init())
+        {
+            std::cerr << "Failed to initialize compression" << std::endl;
+            return FAIL;
+        }
+
+        std::cout << "Using `Zlib " ZLIB_VERSION "` as COMiC::Compression API" << std::endl;
+
+        return SUCCESS;
+    }
 }
 
 #endif //COMIC_COMPRESSION_HPP

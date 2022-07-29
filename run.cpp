@@ -1,27 +1,49 @@
 #include <iostream>
+#include <COMiC/compression.hpp>
 #include <COMiC/crypto.hpp>
 #include <COMiC/network.hpp>
-#include <COMiC/compression.hpp>
-#include <fstream>
 
 using namespace COMiC;
 
 int main()
 {
-    loadConfig();
+    if (Config::loadConfig())
+    {
+        std::cerr << "Failed to load configuration file. Aborting..." << std::endl;
+        exit(1);
+    }
 
-    Network::ServerNetManager server;
-    Network::init(server);
+    if (Crypto::init())
+    {
+        std::cerr << "Failed to initialize Crypto module. Aborting..." << std::endl;
+        exit(1);
+    }
 
-    Crypto::init();
+    if (Compression::init())
+    {
+        std::cerr << "Failed to initialize Compression module. Aborting..." << std::endl;
+        exit(1);
+    }
 
-    Network::ClientNetInfo client;
-    Network::listenToConnections(server, client);
+    if (Network::init())
+    {
+        std::cerr << "Failed to initialize Network module. Aborting..." << std::endl;
+        exit(1);
+    }
 
-    Network::finalize(server);
+    if (Network::listenToConnections())
+    {
+        std::cerr << "Network error. Aborting..." << std::endl;
+    }
+
+    if (Network::finalize())
+    {
+        std::cerr << "An error occurred whilst shutting down Network module" << std::endl;
+        exit(1);
+    }
 
 //    std::string input =
-//            R"V0G0N(
+//            R"(
 //             O freddled gruntbuggly thy micturations are to me
 //                 As plured gabbleblochits on a lurgid bee.
 //              Groop, I implore thee my foonting turlingdromes.
@@ -29,7 +51,7 @@ int main()
 //Or I will rend thee in the gobberwarts with my blurlecruncheon, see if I don't.
 //
 //                (by Prostetnic Vogon Jeltz; see p. 56/57)
-//            )V0G0N";
+//            )";
 //    std::cout << input.length() << std::endl;
 //    Compression::Deflater deflater;
 //    std::string comp;

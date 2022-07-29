@@ -21,7 +21,7 @@ namespace COMiC
 
     static const constexpr COMiC::USize BYTE_SIZE = CHAR_BIT;
 
-    enum IfError
+     enum [[nodiscard]] IfError
     {
         SUCCESS = false,
         FAIL = true

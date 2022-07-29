@@ -1,6 +1,8 @@
 #include <string>
 #include <iostream>
+#include <algorithm>
 #include <vector>
+#include <poll.h>
 #include <curl/curl.h>
 #include "network.hpp"
 #include "COMiC/core/_os.h"
@@ -9,8 +11,34 @@ namespace COMiC::Network
 {
     ClientNetInfo::ClientNetInfo()
     {
-        this->socket = new(std::nothrow) OS::Socket();
-        this->address = new(std::nothrow) OS::InetAddr();
+        this->socket = new OS::Socket();
+        this->address = new OS::InetAddr();
+    }
+
+    ClientNetInfo::ClientNetInfo(const ClientNetInfo &other) : ClientNetInfo()
+    {
+        this->socket->socket = other.socket->socket;
+        this->address->address = other.address->address;
+        this->state = other.state;
+        this->username = other.username;
+        this->uuid = other.uuid;
+        this->encrypted = other.encrypted;
+        this->compressed = other.compressed;
+    }
+
+    [[nodiscard]] char *ClientNetInfo::getIP() const
+    {
+        return inet_ntoa(this->address->address.sin_addr);
+    }
+
+    [[nodiscard]] U16 ClientNetInfo::getSocket() const
+    {
+        return this->socket->socket;
+    }
+
+    bool ClientNetInfo::operator==(const ClientNetInfo &other) const
+    {
+        return this->socket->socket == other.socket->socket;
     }
 
     ClientNetInfo::~ClientNetInfo()
@@ -19,125 +47,262 @@ namespace COMiC::Network
         delete this->address;
     }
 
-    ServerNetManager::ServerNetManager()
-    {
-        this->address = new(std::nothrow) OS::InetAddr();
-        this->socket = new(std::nothrow) OS::Socket();
-    }
-
     ServerNetManager::~ServerNetManager()
     {
         delete this->address;
         delete this->socket;
     }
 
-    void init(ServerNetManager &server)
+    IfError init()
     {
-        std::cout << "Creating socket... ";
-        if ((server.socket->socket = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+        std::cout << "Preparing server socket... ";
+        INSTANCE.socket = new OS::Socket();
+        if ((INSTANCE.socket->socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)) < 0)
         {
             std::cerr << "Could not create socket: " << strerror(errno) << std::endl;
-            exit(1);
+            return FAIL;
+        }
+
+        // Prepare server structure:
+        int on = 1;
+        if (setsockopt(INSTANCE.socket->socket, SOL_SOCKET, SO_REUSEADDR, (char *) &on, sizeof(on)) < 0)
+        {
+            std::cerr << "setsockopt() failed: " << strerror(errno) << std::endl;
+            return FAIL;
+        }
+
+        if (fcntl(INSTANCE.socket->socket, F_SETFL, fcntl(INSTANCE.socket->socket, F_GETFL) | O_NONBLOCK) < 0)
+        {
+            std::cerr << "Failed to set server socket to non-blocking: " << strerror(errno) << std::endl;
+            return FAIL;
         }
         std::cout << "Done" << std::endl;
-
-        // Prepare the server structure:
-        server.address->address.sin_family = AF_INET;
-        inet_pton(AF_INET, COMiC::SERVER_IP.c_str(), &server.address->address.sin_addr.s_addr);
-        server.address->address.sin_port = htons(COMiC::SERVER_PORT);
 
         std::cout << "Binding... ";
-        if (bind(server.socket->socket, (sockaddr *) &server.address->address, sizeof(server.address->address)) < 0)
+        INSTANCE.address = new OS::InetAddr();
+        INSTANCE.address->address.sin_family = AF_INET;
+        inet_pton(AF_INET, Config::SERVER_IP.c_str(), &INSTANCE.address->address.sin_addr.s_addr);
+        INSTANCE.address->address.sin_port = htons(Config::SERVER_PORT);
+
+        if (bind(
+                INSTANCE.socket->socket,
+                (sockaddr *) &INSTANCE.address->address,
+                sizeof(INSTANCE.address->address)
+        ) < 0)
         {
-            std::cerr << "Bind failed: " << strerror(errno) << std::endl;
-            exit(1);
+            std::cerr << "bind() failed: " << strerror(errno) << std::endl;
+            return FAIL;
         }
         std::cout << "Done" << std::endl;
+
+        if (INSTANCE.rsa.init(false))
+        {
+            std::cerr << "Failed to initialize RSA cipher" << std::endl;
+            return FAIL;
+        }
+
+        INSTANCE.clients.reserve(Config::MAX_PLAYERS);
+
+        std::cout << "Server successfully started on " << Config::SERVER_IP << ":" << Config::SERVER_PORT << std::endl;
+
+        return SUCCESS;
     }
 
-    void listenToConnections(const ServerNetManager &server, ClientNetInfo &connection)
+    IfError listenToConnections()
     {
         // Listen to incoming connections:
-        if (listen(server.socket->socket, 3) < 0)
+        if (listen(INSTANCE.socket->socket, SOMAXCONN) < 0)
         {
             std::cerr << "listen() failed: " << strerror(errno) << std::endl;
-            exit(1);
+            return FAIL;
         }
 
-        std::cout << "Waiting for incoming connections..." << std::flush;
+        std::cout << "Waiting for incoming connections..." << std::endl;
 
-        // Accept incoming connection:
-        socklen_t c = sizeof(connection.address->address);
-        connection.socket->socket = (int) accept(server.socket->socket, (sockaddr *) &connection.address->address, &c);
-        if (connection.socket->socket < 0)
-        {
-            std::cerr << "accept() failed: " << strerror(errno) << std::endl;
-            exit(1);
-        }
+        auto fds = new struct pollfd[1 + Config::MAX_PLAYERS];
+        for (I32 i = 0; i <= Config::MAX_PLAYERS; i++)
+            fds[i].events = POLLIN;
 
-        std::cout << "Connection accepted" << std::endl;
+        // Set up server listening socket:
+        fds[0].fd = INSTANCE.socket->socket;
 
-        ssize_t message_length;
-        Byte bytes[1024];
+        Byte bytes[4096];
         std::vector<Byte> msg;
-        while (true)
+        while (COMiC::alive)
         {
-            do
-            {
-                message_length = recv(connection.socket->socket, bytes, sizeof(bytes), 0);
+            // Update client info:
+            for (I32 i = 0; i < INSTANCE.clients.size(); i++)
+                fds[i + 1].fd = INSTANCE.clients[i].socket->socket;
 
-                if (message_length > 0)
-                    msg.insert(msg.end(), bytes, bytes + message_length);
-                else break;
+            // Wait for incoming connections:
+            if (poll(fds, INSTANCE.clients.size() + 1, -1) < 0)
+            {
+                std::cerr << "poll() failed " << strerror(errno) << std::endl;
+                break;
             }
-            while (message_length == sizeof(bytes));
 
-            if (message_length > 0)
+            for (I32 i = 0; i <= INSTANCE.clients.size(); i++)
             {
-                if (connection.encrypted)
-                    connection.cipher.decrypt(msg.data(), msg.size(), msg.data());
+                if (fds[i].revents == 0)
+                    continue;
 
-                Buffer buf(msg.data(), 0, msg.size());
-                msg.clear();
-                buf.size = buf.readVarInt();
-
-                if (connection.compressed)
+                // Accept new connections:
+                if (fds[i].fd == INSTANCE.socket->socket)
                 {
-                    I32 data_length = buf.readVarInt();
-
-                    if (data_length > 0)
+                    std::cout << "------------------------" << std::endl;
+                    std::cout << "New incoming connection:" << std::endl;
+                    int new_socket;
+                    do
                     {
-                        std::string inflated;
-                        connection.inflater.decompress(buf.bytes + buf.index, buf.size - buf.index, inflated);
-                        memcpy(buf.bytes, inflated.data(), inflated.length());
-                        buf.index = 0;
-                    }
-                }
+                        ClientNetInfo new_connection;
+                        socklen_t addrlen = sizeof(new_connection.address->address);
+                        new_socket = accept(
+                                INSTANCE.socket->socket,
+                                (struct sockaddr *) &new_connection.address->address,
+                                &addrlen
+                        );
 
-                server.receivePacket(connection, buf);
-            }
-            else if (message_length == 0)
-            {
-                std::cout << "Connection closed" << std::endl;
-                break;
-            }
-            else
-            {
-                std::cerr << "Failed receiving data from connection: " << strerror(errno) << std::endl;
-                break;
+                        if (new_socket < 0)
+                        {
+                            if (errno != EWOULDBLOCK && errno != EAGAIN)
+                            {
+                                std::cerr << "accept() failed: " << strerror(errno) << std::endl;
+                                continue;
+                            }
+                        }
+                        else
+                        {
+                            if (fcntl(new_socket, F_SETFL, fcntl(new_socket, F_GETFL) | O_NONBLOCK) < 0)
+                            {
+                                std::cerr << "Unable to set new client socket in non-blocking mode: "
+                                          << strerror(errno) << std::endl;
+                                close(new_socket);
+                                continue;
+                            }
+
+                            // Add new fd to the vector:
+                            new_connection.socket->socket = new_socket;
+
+                            // Add new socket to the array of sockets:
+                            INSTANCE.clients.push_back(new_connection);
+
+                            std::cout << "Socket: " << new_socket << std::endl;
+                            std::cout << "IP: " << inet_ntoa(new_connection.address->address.sin_addr) << std::endl;
+                            std::cout << "Port: " << ntohs(new_connection.address->address.sin_port) << std::endl;
+                            std::cout << "------------------------" << std::endl;
+                        }
+                    }
+                    while (new_socket != -1);
+                }
+                else // Handle data from client:
+                {
+                    auto sd = fds[i].fd;
+                    auto connection = std::find_if(
+                            INSTANCE.clients.begin(),
+                            INSTANCE.clients.end(),
+                            [&](const ClientNetInfo &c)
+                            { return c.socket->socket == sd; }
+                    );
+
+                    // Should never happen, I guess...
+                    if (connection == INSTANCE.clients.end())
+                    {
+                        std::cerr << "Unable to find client connection associated with socket " << sd << std::endl;
+                        close(sd);
+                        continue;
+                    }
+
+                    ssize_t message_length;
+                    while (true)
+                    {
+                        message_length = recv(sd, bytes, sizeof(bytes), 0);
+
+                        if (message_length > 0)
+                            msg.insert(msg.end(), bytes, bytes + message_length);
+                        else break;
+                    }
+
+                    // Means that client closed the connection
+                    if (message_length == 0)
+                    {
+                        std::cout << "Connection closed" << std::endl;
+                        close(sd);
+                        INSTANCE.clients.erase(connection);
+                        continue;
+                    }
+
+                    if (errno == EAGAIN || errno == EWOULDBLOCK) // Received all data
+                    {
+                        if (connection->encrypted && connection->cipher.decrypt(msg.data(), msg.size(), msg.data()))
+                        {
+                            std::cerr << "Unable to decrypt packet from client" << std::endl;
+                            disconnect(*connection, "Badly encrypted packet");
+                            continue;
+                        }
+
+                        Buffer buf(msg.data(), 0, msg.size());
+                        buf.size = buf.readVarInt();
+
+                        if (connection->compressed)
+                        {
+                            I32 data_length = buf.readVarInt();
+
+                            if (data_length > 0)
+                            {
+                                std::string inflated;
+                                if (Compression::INFLATER.decompress(
+                                        buf.bytes + buf.index,
+                                        buf.size - buf.index,
+                                        inflated
+                                ))
+                                {
+                                    std::cerr << "Could not decompress packet from client" << std::endl;
+                                    disconnect(*connection, "Bad compressed packet format");
+                                    continue;
+                                }
+                                memcpy(buf.bytes, inflated.data(), inflated.length());
+                                buf.index = 0;
+                            }
+                        }
+
+                        INSTANCE.receivePacket(*connection, buf);
+                    }
+                    else // Handle error
+                    {
+                        std::cerr << "Failed receiving data from connection: " << strerror(errno) << std::endl;
+                        close(sd);
+                        INSTANCE.clients.erase(connection);
+                        continue;
+                    }
+
+                    msg.clear();
+                }
             }
         }
+
+        delete[] fds;
+
+        return SUCCESS;
     }
 
-    void sendPacket(ClientNetInfo &connection, Buffer &buf)
+    IfError sendPacket(ClientNetInfo &connection, Buffer &buf)
     {
         buf.prepare(connection);
-        send(connection.socket->socket, buf.bytes + buf.index, (size_t) buf.size, 0);
+        if (send(connection.socket->socket, buf.bytes + buf.index, (size_t) buf.size, 0) < 0)
+        {
+            std::cerr << "send() failed: " << strerror(errno) << std::endl;
+            return FAIL;
+        }
+
+        return SUCCESS;
     }
 
-    void finalize(const ServerNetManager &server)
+    void disconnect(ClientNetInfo &connection, const std::string &reason)
     {
-        close(server.socket->socket);
+        ServerNetManager::sendDisconnectPacket(connection, reason);
+        if (close(connection.socket->socket))
+            std::cerr << "Failed to close client socket: " << strerror(errno) << std::endl;
+        INSTANCE.clients.erase(std::find(INSTANCE.clients.begin(), INSTANCE.clients.end(), connection));
     }
 
     size_t curlWriteFunc(char *data, size_t size, size_t nmemb, std::string *buffer)
@@ -153,7 +318,7 @@ namespace COMiC::Network
         return res;
     }
 
-    void sendHTTPGet(const std::string &server, const std::string &page, std::string &out)
+    IfError sendHTTPGet(const std::string &server, const std::string &page, std::string &out)
     {
         CURL *curl;
         char err[CURL_ERROR_SIZE];
@@ -164,7 +329,7 @@ namespace COMiC::Network
         if (curl == nullptr)
         {
             std::cerr << "sendHTTPGet(): cURL initialization failed" << std::endl;
-            return;
+            return FAIL;
         }
 
         curl_easy_setopt(curl, CURLOPT_URL, (server + page).c_str());
@@ -175,14 +340,29 @@ namespace COMiC::Network
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &out);
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, curlWriteFunc);
 
-        if (curl_easy_perform(curl) != CURLE_OK)
-        {
-            std::cout << err << std::endl;
-            return;
-        }
+        auto res = curl_easy_perform(curl);
 
         curl_easy_cleanup(curl);
         curl_global_cleanup();
+
+        if (res != CURLE_OK)
+        {
+            std::cout << err << std::endl;
+            return FAIL;
+        }
+
+        return SUCCESS;
+    }
+
+    IfError finalize()
+    {
+        if (close(INSTANCE.socket->socket) != 0)
+        {
+            std::cerr << "Failed to close server socket: " << strerror(errno) << std::endl;
+            return FAIL;
+        }
+
+        return SUCCESS;
     }
 
 }

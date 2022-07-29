@@ -4,6 +4,8 @@
 #include <string>
 #include <COMiC/core.hpp>
 #include <COMiC/crypto.hpp>
+#include <fstream>
+#include <sstream>
 
 namespace COMiC::Util
 {
@@ -20,7 +22,7 @@ namespace COMiC::Util
         {
         };
 
-        constexpr inline explicit UUID(const Byte *data) noexcept
+        constexpr inline explicit UUID(const Byte data[16]) noexcept
         {
             U64 msb_ = 0, lsb_ = 0;
 
@@ -62,19 +64,21 @@ namespace COMiC::Util
         ~UUID() = default;
     };
 
-    static inline void readPNG(const std::string &filename, std::string &out)
+    static inline IfError readPNG(const std::string &filename, std::string &out)
     {
         std::ifstream fin(filename, std::ios::in | std::ios::binary);
         if (!fin.good())
         {
             std::cerr << "readPNG() failed: unable to open " << filename << std::endl;
-            return;
+            return FAIL;
         }
 
         std::ostringstream oss;
         oss << fin.rdbuf();
 
         out = oss.str();
+
+        return SUCCESS;
     }
 }
 

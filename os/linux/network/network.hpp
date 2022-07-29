@@ -10,7 +10,8 @@
 #include <unistd.h>
 #include <cstdlib>
 #include <netdb.h>
-#include "COMiC/network.hpp"
+#include <fcntl.h>
+#include <COMiC/network.hpp>
 
 
 

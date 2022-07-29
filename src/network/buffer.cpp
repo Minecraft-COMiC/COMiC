@@ -33,7 +33,7 @@ namespace COMiC::Network
         if (connection.compressed)
         {
             auto data_size = this->length();
-            if (data_size >= COMiC::NETWORK_COMPRESSION_THRESHOLD)
+            if (data_size >= Config::NETWORK_COMPRESSION_THRESHOLD)
             {
                 // Compressed packet format (https://www.reddit.com/r/admincraft/comments/2agvxn/how_compression_works):
                 // 1. Total packet length (VarInt);
@@ -41,7 +41,7 @@ namespace COMiC::Network
                 // 3. Packet data.
 
                 std::string deflated;
-                connection.deflater.compress(this->data(), data_size, deflated);
+                Compression::DEFLATER.compress(this->data(), data_size, deflated);
                 this->index = Buffer::DATA_START;
                 this->writeVarInt((I32) data_size);
                 memcpy(this->data() + this->index, deflated.data(), deflated.length());
@@ -76,7 +76,7 @@ namespace COMiC::Network
     {
         if (this->index + 1 > this->size)
         {
-            this->bytes = static_cast<Byte *>(realloc(this->bytes, this->size * 2));
+            this->bytes = (Byte *) realloc(this->bytes, this->size * 2);
             this->size *= 2;
         }
 

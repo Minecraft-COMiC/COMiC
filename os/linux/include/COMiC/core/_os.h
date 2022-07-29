@@ -12,7 +12,8 @@
 
 namespace COMiC::Network::OS
 {
-    struct Socket {
+    struct Socket
+    {
         int socket;
     };
 

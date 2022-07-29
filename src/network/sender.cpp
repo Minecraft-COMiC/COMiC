@@ -4,8 +4,20 @@
 
 namespace COMiC::Network
 {
+    void ServerNetManager::sendDisconnectPacket(ClientNetInfo &connection, const std::string &reason)
+    {
+        std::cout << "Disconnect S->C" << std::endl;
+        Buffer buf;
+
+        buf.writePacketID(DISCONNECT_S2C_PACKET_ID);
+        buf.writeString("{\n    \"text\": \"" + reason + "\"\n}", 32767);
+
+        sendPacket(connection, buf);
+    }
+
     void ServerNetManager::sendRequestEncryptionPacket(ClientNetInfo &connection) const
     {
+        std::cout << "Request Encryption S->C" << std::endl;
         Byte nonce[4];
         COMiC::Crypto::secureBytes(nonce, 4);
 
@@ -23,6 +35,7 @@ namespace COMiC::Network
 
     void ServerNetManager::sendLoginSuccessPacket(ClientNetInfo &connection)
     {
+        std::cout << "Login Success S->C" << std::endl;
         Buffer buf;
 
         buf.writePacketID(LOGIN_SUCCESS_S2C_PACKET_ID);
@@ -38,6 +51,7 @@ namespace COMiC::Network
     // https://wiki.vg/Server_List_Ping#Status_Response
     void ServerNetManager::sendStatusResponsePacket(ClientNetInfo &connection)
     {
+        std::cout << "Query Response S->C" << std::endl;
         std::string str; // String representation of JSON-response
         try
         {
@@ -60,8 +74,7 @@ namespace COMiC::Network
             {
                 Crypto::Base64::encode((Byte *) favicon.data(), favicon.length(), favicon);
                 response["favicon"] = ("data:image/png;base64," + favicon);
-            }
-            else
+            } else
                 std::cerr << "favicon must be exactly 64x64 pixels but instead is "
                           << width << "x" << height << std::endl;
 
@@ -82,6 +95,7 @@ namespace COMiC::Network
 
     void ServerNetManager::sendPongPacket(ClientNetInfo &connection, I64 payload)
     {
+        std::cout << "Pong S->C" << std::endl;
         Buffer buf;
 
         buf.writePacketID(QUERY_PONG_S2C_PACKET_ID);
@@ -92,6 +106,7 @@ namespace COMiC::Network
 
     void ServerNetManager::sendGameJoinPacket(ClientNetInfo &connection)
     {
+        std::cout << "Game Join S->C" << std::endl;
         Buffer buf;
 
         buf.writePacketID(GAME_JOIN_S2C_PACKET_ID);
@@ -109,6 +124,7 @@ namespace COMiC::Network
 
     void ServerNetManager::sendSetCompressionPacket(ClientNetInfo &connection, I32 threshold)
     {
+        std::cout << "Set Compression S->C" << std::endl;
         Buffer buf;
 
         buf.writePacketID(LOGIN_COMPRESSION_S2C_PACKET_ID);

@@ -39,6 +39,8 @@ add_library(
         src/network/buffer.cpp
         src/network/sender.cpp
         src/network/receiver.cpp
+
+        src/config.cpp
 )
 
 set_target_properties(core PROPERTIES LINKER_LANGUAGE CXX)

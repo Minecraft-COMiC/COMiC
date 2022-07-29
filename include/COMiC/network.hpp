@@ -187,20 +187,26 @@ namespace COMiC::Network
 
     struct ClientNetInfo
     {
-        OS::InetAddr *address;
-        OS::Socket *socket;
+        OS::InetAddr *address = nullptr;
+        OS::Socket *socket = nullptr;
         NetworkState state = HANDSHAKING;
         std::string username;
         Util::UUID uuid;
         bool encrypted = false;
-        Crypto::AES cipher{};
+        Crypto::AES cipher;
         bool compressed = false;
-        Compression::Deflater deflater = Compression::Deflater();
-        Compression::Inflater inflater = Compression::Inflater();
 
         ClientNetInfo();
 
+        ClientNetInfo(const ClientNetInfo &other);
+
+        [[nodiscard]] char *getIP() const;
+
+        [[nodiscard]] U16 getSocket() const;
+
         ~ClientNetInfo();
+
+        bool operator==(const ClientNetInfo &other) const;
     };
 
     struct Buffer
@@ -216,13 +222,13 @@ namespace COMiC::Network
 
         Buffer(const Byte *bytes, USize index, USize size) : index(index), size(size)
         {
-            this->bytes = new(std::nothrow) Byte[size];
+            this->bytes = (Byte *) std::malloc(size);
             std::memcpy(this->bytes, bytes, size);
         }
 
         explicit Buffer(USize capacity) : size(capacity)
         {
-            this->bytes = new(std::nothrow) Byte[capacity]{};
+            this->bytes = (Byte *) std::malloc(capacity);
         }
 
         Buffer() : Buffer(128)
@@ -305,11 +311,12 @@ namespace COMiC::Network
 
     struct ServerNetManager
     {
-        OS::InetAddr *address;
-        OS::Socket *socket;
-        Crypto::RSA rsa = Crypto::RSA(false);
+        OS::InetAddr *address = nullptr; // Server address
+        OS::Socket *socket = nullptr; // Server socket
+        std::vector<ClientNetInfo> clients; // Clients
+        Crypto::RSA rsa = Crypto::RSA();
 
-        ServerNetManager();
+        ServerNetManager() = default;
 
         ~ServerNetManager();
 
@@ -329,24 +336,30 @@ namespace COMiC::Network
         static void sendPongPacket(ClientNetInfo &connection, I64 payload);
 
         // Play:
+        static void sendDisconnectPacket(ClientNetInfo &connection, const std::string &reason);
+
         static void sendHeldItemChangePacket(ClientNetInfo &connection);
 
         // C -> S:
         void receivePacket(ClientNetInfo &connection, Buffer &buf) const;
 
         // Login:
-        void handleEncryptionRequestPacket(ClientNetInfo &connection, Buffer &buf) const;
+        void handleEncryptionResponsePacket(ClientNetInfo &connection, Buffer &buf) const;
     };
 
-    void init(ServerNetManager &server);
+    inline ServerNetManager INSTANCE;
 
-    void listenToConnections(const ServerNetManager &server, ClientNetInfo &connection);
+    IfError init();
 
-    void sendPacket(ClientNetInfo &connection, Buffer &buf);
+    IfError listenToConnections();
 
-    void finalize(const ServerNetManager &server);
+    IfError sendPacket(ClientNetInfo &connection, Buffer &buf);
 
-    void sendHTTPGet(const std::string &server, const std::string &page, std::string &out);
+    void disconnect(ClientNetInfo &connection, const std::string &reason);
+
+    IfError sendHTTPGet(const std::string &server, const std::string &page, std::string &out);
+
+    IfError finalize();
 }
 
 #endif /* COMiC_NETWORK_HPP */
