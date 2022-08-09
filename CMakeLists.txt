@@ -12,6 +12,11 @@ set(COMiC_VERSION ${COMiC_VERSION_MAJOR}.${COMiC_VERSION_MINOR}.${COMiC_VERSION_
 
 message(STATUS "Building COMiC ${COMiC_VERSION}")
 
+# Disable ridiculous Microsoft warnings
+if (MSVC)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif()
+
 add_library(
         __COMiC_Headers
         INTERFACE
@@ -32,7 +37,9 @@ add_library(
 
         $<TARGET_OBJECTS:COMiC::OS>
 
-        src/sentinel.cpp
+        src/crypto/crypto.cpp
+        src/crypto/digests.cpp
+        src/crypto/encryption.cpp
 
         src/util/uuid.cpp
 
@@ -41,6 +48,9 @@ add_library(
         src/network/receiver.cpp
 
         src/config.cpp
+        src/io.cpp
+        src/compression.cpp
+        src/sentinel.cpp
 )
 
 set_target_properties(core PROPERTIES LINKER_LANGUAGE CXX)

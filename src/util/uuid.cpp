@@ -6,6 +6,20 @@
 
 namespace COMiC::Util
 {
+    UUID::UUID(const Byte data[16]) noexcept
+    {
+        U64 msb_ = 0, lsb_ = 0;
+
+        for (I32 i = 0; i < 8; i++)
+            msb_ = (msb_ << 8) | (data[i] & 0xFF);
+
+        for (I32 i = 8; i < 16; i++)
+            lsb_ = (lsb_ << 8) | (data[i] & 0xFF);
+
+        this->msb = msb_;
+        this->lsb = lsb_;
+    }
+
     UUID::UUID(const std::string &str) noexcept
     {
         auto copy = str;
@@ -28,62 +42,27 @@ namespace COMiC::Util
 
     UUID UUID::random()
     {
-        Byte randomBytes[16];
-        COMiC::Crypto::secureBytes(randomBytes, 16);
+        ByteVector randomBytes(16);
+        Crypto::secureBytes(randomBytes);
 
         randomBytes[6] &= 0x0F;
         randomBytes[6] |= 0x40;
         randomBytes[8] &= 0x3F;
         randomBytes[8] |= 0x80;
 
-        return UUID(randomBytes);
+        return UUID(randomBytes.data());
     }
 
-    UUID UUID::fromName(const char *name) noexcept
+    UUID UUID::fromName(const std::string &name) noexcept
     {
-        Byte md5Bytes[16];
-        Crypto::MD5::hash(name, md5Bytes);
+        auto md5Bytes = Crypto::MD5::hash(name);
 
         md5Bytes[6] &= 0x0F;
         md5Bytes[6] |= 0x30;
         md5Bytes[8] &= 0x3F;
         md5Bytes[8] |= 0x80;
 
-        return UUID(md5Bytes);
-    }
-
-    constexpr U32 UUID::version() const noexcept
-    {
-        return (U32) (this->msb >> 12) & 0x0F;
-    }
-
-    constexpr U32 UUID::variant() const noexcept
-    {
-        return (U32) (((U64) this->lsb >> (64 - ((U64) this->lsb >> 62))) & (this->lsb >> 63));
-    }
-
-    constexpr U64 UUID::timestamp() const noexcept
-    {
-        if (this->version() != 1)
-            return -1;
-
-        return (this->msb & 0x0FFFLL) << 48 | ((this->msb >> 16) & 0x0FFFFLL) << 32 | (U64) ((U64) this->msb >> 32);
-    }
-
-    constexpr U32 UUID::clockSequence() const noexcept
-    {
-        if (this->version() != 1)
-            return -1;
-
-        return (U32) ((U64) (this->lsb & 0x3FFF000000000000LL) >> 48);
-    }
-
-    constexpr U64 UUID::node() const noexcept
-    {
-        if (this->version() != 1)
-            return -1;
-
-        return this->lsb & 0x0000FFFFFFFFFFFFLL;
+        return UUID(md5Bytes.data());
     }
 
     std::string digits(U64 val, USize digits)

@@ -4,6 +4,9 @@
 #  include <cstddef>
 #  include <cstdint>
 #  include <climits>
+#  include <vector>
+#  include <array>
+#  include <variant>
 
 namespace COMiC
 {
@@ -19,9 +22,31 @@ namespace COMiC
     using U64 = uint_least64_t;
     using Byte = unsigned char;
 
-    static const constexpr COMiC::USize BYTE_SIZE = CHAR_BIT;
+    class Error : public std::exception
+    {
+    protected:
+        Error() : std::exception()
+        {
+        }
 
-     enum [[nodiscard]] IfError
+    public:
+        [[nodiscard]] char const *what() const noexcept override
+        {
+            return "COMiC: Unknown error";
+        }
+    };
+
+    using ByteVector = std::vector<Byte>;
+
+    template<USize N>
+    struct ByteArray : public std::array<Byte, N>
+    {
+        using std::array<Byte, N>::array;
+    };
+
+    static inline const USize BYTE_SIZE = CHAR_BIT;
+
+    enum [[nodiscard]] IfError : bool
     {
         SUCCESS = false,
         FAIL = true
@@ -33,18 +58,5 @@ namespace COMiC
         EQUAL = 0,
         GREATER = 1,
     };
-
-    template<typename in_t, typename out_t>
-    static constexpr inline out_t *shiftPointerL(in_t *pointer, COMiC::USize offset)
-    {
-        return (out_t *) (((COMiC::UIntPtr) pointer) - offset);
-    }
-
-    template<typename in_t, typename out_t>
-    static constexpr inline out_t *shiftPointerR(in_t *pointer, COMiC::USize offset)
-    {
-        return (out_t *) (((COMiC::UIntPtr) pointer) + offset);
-    }
-
 }
 #endif /* COMiC_Core_TYPES_HPP */

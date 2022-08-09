@@ -8,10 +8,9 @@
 namespace COMiC::Network
 {
     // TODO: Make separate handle functions
-    void ServerNetManager::receivePacket(ClientNetInfo &connection, Buffer &buf) const
+    void NetworkManager::receivePacket(ClientNetInfo &connection, RecvBuf buf)
     {
         PacketID packet_id = buf.readPacketID(connection.state);
-
         std::cout << "////////////////|NEW PACKET from ";
         if (connection.username.empty())
             std::cout << "socket " << connection.getSocket();
@@ -48,10 +47,9 @@ namespace COMiC::Network
                 std::cout << "Login Key C->S" << std::endl;
                 handleEncryptionResponsePacket(connection, buf);
 
-                sendSetCompressionPacket(connection, Config::NETWORK_COMPRESSION_THRESHOLD);
+                sendSetCompressionPacket(connection, CONFIG.networkCompressionThreshold());
                 sendLoginSuccessPacket(connection);
-                sendGameJoinPacket(connection);
-
+                disconnect(connection, "Not Implemented"); // Nothing is ready yet for futher client login
                 break;
             case QUERY_PING_C2S_PACKET_ID:
                 std::cout << "Ping C->S" << std::endl;
@@ -66,56 +64,41 @@ namespace COMiC::Network
                 break;
         }
 
-        std::cout << "Bytes[" << buf.size << "] = {";
-        for (auto i = 0; i < buf.size; i++)
-            std::cout << (I32) (I8) buf.bytes[i] << (i != buf.size - 1 ? ", " : "}");
+        auto bytes = buf.getBytes();
+        std::cout << "Bytes[" << bytes.size() << "] = {";
+        for (auto i = 0; i < bytes.size(); i++)
+            std::cout << (I32) (I8) bytes[i] << (i != bytes.size() - 1 ? ", " : "}");
         std::cout << std::endl;
     }
 
-    void ServerNetManager::handleEncryptionResponsePacket(ClientNetInfo &connection, Buffer &buf) const
+    void NetworkManager::handleEncryptionResponsePacket(ClientNetInfo &connection, RecvBuf &buf)
     {
-        I32 enc_len = buf.readVarInt();
-        Byte *enc = new Byte[enc_len];
-        buf.readByteArray(enc, enc_len);
+        auto enc = buf.readByteArray();
+        auto token = buf.readByteArray();
 
-        I32 token_len = buf.readVarInt();
-        Byte *token = new Byte[token_len];
-        buf.readByteArray(token, token_len);
+        auto key = this->rsa.decrypt(enc);
 
-        USize len;
-        this->rsa.decrypt(enc, enc_len, nullptr, len);
-
-        Byte key[16];
-        this->rsa.decrypt(enc, enc_len, key, len);
-
+        connection.cipher.init(key.data(), key.data());
         connection.encrypted = true;
-        connection.cipher.init(key, key);
 
         // Send HTTP GET to Mojang session servers:
         Crypto::SHA1 sha1;
-        sha1.init();
-        Byte digest[SHA_DIGEST_LENGTH];
-        sha1.update((Byte *) "", strlen("")); // Server id
-        sha1.update(key, sizeof(key)); // AES key
-        sha1.update(this->rsa.getEncodedPublicKey(), this->rsa.getEncodedKeySize()); // Server public key
-        sha1.final(digest);
+        sha1.update(""); // Server id
+        sha1.update(key); // AES key
+        sha1.update(this->rsa.getEncodedPublicKey()); // Server public key
 
-        std::string hexdigest;
-        Crypto::SHA1::hexdigest(digest, hexdigest);
-
-        std::string response;
         std::string page("/session/minecraft/hasJoined?username=");
         page.append(connection.username);
         page.append("&serverId=");
-        page.append(hexdigest);
+        page.append(Crypto::SHA1::hexdigest(sha1.final().data()));
 
-        if (Config::PREVENT_PROXY_CONNECTIONS)
+        if (CONFIG.preventProxyConnections())
         {
             page.append("&ip=");
             page.append(connection.getIP());
         }
 
-        sendHTTPGet("sessionserver.mojang.com", page, response);
+        auto response = sendHTTPGet("sessionserver.mojang.com", page);
         try
         {
             auto json = nlohmann::json::parse(response);

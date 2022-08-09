@@ -3,6 +3,8 @@
 
 #include <cstdlib>
 #include <cstring>
+#include <map>
+#include <vector>
 #include <COMiC/core.hpp>
 #include <COMiC/util.hpp>
 #include <COMiC/crypto.hpp>
@@ -10,6 +12,36 @@
 
 namespace COMiC::Network
 {
+    using Socket = U64;
+
+    class NetworkError : public Error
+    {
+    private:
+        static std::string getNativeError();
+
+    protected:
+        std::string message;
+
+    public:
+        explicit NetworkError(const std::string &str) : NetworkError(str.c_str())
+        {
+        }
+
+        explicit NetworkError(const char *str)
+        {
+            auto err = getNativeError();
+
+            this->message = "COMiC::Network: ";
+            this->message.append(str);
+            this->message.append(" (");
+            if (err.empty())
+                this->message.append("Unknown system error");
+            else
+                this->message.append(err);
+            this->message.append(")");
+        }
+    };
+
     enum NetworkState
     {
         HANDSHAKING = -1,
@@ -179,187 +211,285 @@ namespace COMiC::Network
         LOGIN_QUERY_RESPONSE_C2S_PACKET_ID
     };
 
-    namespace OS
-    {
-        struct InetAddr;
-        struct Socket;
-    }
-
     struct ClientNetInfo
     {
-        OS::InetAddr *address = nullptr;
-        OS::Socket *socket = nullptr;
+    private:
+        std::string address;
+        Socket socket;
+
+    public:
         NetworkState state = HANDSHAKING;
         std::string username;
         Util::UUID uuid;
         bool encrypted = false;
         Crypto::AES cipher;
         bool compressed = false;
+        bool open = true;
 
-        ClientNetInfo();
+        ClientNetInfo(Socket socket, std::string address);
 
-        ClientNetInfo(const ClientNetInfo &other);
+        [[nodiscard]] const std::string &getIP() const;
 
-        [[nodiscard]] char *getIP() const;
+        [[nodiscard]] Socket getSocket() const;
 
-        [[nodiscard]] U16 getSocket() const;
+        bool operator==(const ClientNetInfo &other) const
+        {
+            return this->getSocket() == other.getSocket();
+        }
 
-        ~ClientNetInfo();
+        bool operator<(const ClientNetInfo &other) const
+        {
+            return this->getSocket() < other.getSocket();
+        }
 
-        bool operator==(const ClientNetInfo &other) const;
+        bool operator>(const ClientNetInfo &other) const
+        {
+            return this->getSocket() > other.getSocket();
+        }
     };
 
-    struct Buffer
+    class RecvBuf
     {
+    private:
+        USize index = 0;
+        ByteVector bytes;
+
+        void skip(USize count);
+
+    public:
+        RecvBuf(Byte *data, USize len, const ClientNetInfo &connection)
+        {
+            if (connection.encrypted)
+                connection.cipher.decrypt(data, len, data);
+
+            bytes.assign(data, data + std::min(10ULL, len));
+
+            if (connection.compressed)
+            {
+                I32 data_length = this->readVarInt(); // Uncompressed data length
+                if (data_length > 0)
+                {
+                    this->bytes = Compression::INFLATER.decompress(
+                        data + this->index,
+                        len - this->index
+                    );
+
+                    this->index = 0;
+                    return;
+                }
+            }
+
+            if (len > 10)
+                this->bytes.insert(this->bytes.end(), data + 10, data + len);
+        }
+
+        [[nodiscard]] static inline I32 getPacketSize(const ClientNetInfo &connection, Byte *&data, USize len)
+        {
+            if (connection.encrypted)
+                connection.cipher.decrypt(data, std::min(5ULL, len), data);
+
+            I32 res = 0;
+            Byte byte;
+            for (I32 i = 0; i < std::min(6ULL, len); i++)
+            {
+                byte = data[i];
+                data++;
+                res |= (byte & 0x7F) << (i * 7);
+
+                if ((byte & 0x80) != 0x80) break;
+            }
+
+            return res;
+        }
+
+        Byte read();
+
+        I32 readVarInt();
+
+        I64 readVarLong();
+
+        bool readBool();
+
+        I16 readShort();
+
+        I32 readInt();
+
+        I64 readLong();
+
+        float readFloat();
+
+        double readDouble();
+
+        std::string readString(USize maxlen);
+
+        I32 readEnum();
+
+        ByteVector readByteArray();
+
+        PacketID readPacketID(NetworkState state);
+
+        [[nodiscard]] inline Byte *position() noexcept
+        {
+            return this->bytes.data() + this->index;
+        }
+
+        [[nodiscard]] inline const ByteVector &getBytes() const noexcept
+        {
+            return this->bytes;
+        }
+    };
+
+    class SendBuf
+    {
+    private:
         enum
         {
             DATA_START = 5
         };
 
-        Byte *bytes;
+        ByteVector bytes;
         USize index = DATA_START;
         USize size;
 
-        Buffer(const Byte *bytes, USize index, USize size) : index(index), size(size)
-        {
-            this->bytes = (Byte *) std::malloc(size);
-            std::memcpy(this->bytes, bytes, size);
-        }
-
-        explicit Buffer(USize capacity) : size(capacity)
-        {
-            this->bytes = (Byte *) std::malloc(capacity);
-        }
-
-        Buffer() : Buffer(128)
-        {
-        }
-
-        ~Buffer()
-        {
-            delete[] bytes;
-        }
-
         void prependSize();
-
-        void prepare(ClientNetInfo &connection);
 
         void skip(USize count);
 
-        Byte read();
+    public:
+        explicit SendBuf(USize capacity) : size(capacity)
+        {
+            this->bytes.reserve(capacity);
+            for (I32 i = 0; i < DATA_START; i++)
+                this->bytes.push_back(0);
+        }
+
+        SendBuf() : SendBuf(128)
+        {
+        }
+
+        void prepare(ClientNetInfo &connection);
 
         void write(Byte byte);
 
-        I32 readVarInt();
+        void write(std::initializer_list<Byte> data);
 
         void writeVarInt(I32 value);
 
-        I64 readVarLong();
-
         void writeVarLong(I64 value);
-
-        bool readBool();
 
         void writeBool(bool value);
 
-        I16 readShort();
-
         void writeShort(I16 value);
-
-        I32 readInt();
 
         void writeInt(I32 value);
 
-        I64 readLong();
-
         void writeLong(I64 value);
-
-        float readFloat();
 
         void writeFloat(float value);
 
-        double readDouble();
-
         void writeDouble(double value);
-
-        std::string readString(USize maxlen);
 
         void writeString(const std::string &str, USize maxlen);
 
-        I32 readEnum();
-
         void writeEnum(I32 value);
 
-        void readByteArray(Byte *out, I32 count);
-
-        void writeByteArray(const Byte *arr, I32 count);
-
-        PacketID readPacketID(NetworkState state);
+        void writeByteArray(const ByteVector &arr);
 
         void writePacketID(PacketID id);
 
-        [[nodiscard]] Byte *data() const
+        [[nodiscard]] inline Byte *data() const
         {
-            return this->bytes + DATA_START;
+            return const_cast<Byte *>(this->bytes.data()) + DATA_START;
         }
 
-        [[nodiscard]] USize length() const
+        [[nodiscard]] inline Byte *position() const
+        {
+            return const_cast<Byte *>(this->bytes.data()) + this->index;
+        }
+
+        [[nodiscard]] inline USize length() const
         {
             return this->index - DATA_START;
         }
+
+        [[nodiscard]] inline USize getSize() const
+        {
+            return this->size;
+        }
+
+        [[nodiscard]] inline USize getIndex() const
+        {
+            return this->index;
+        }
+
+        [[nodiscard]] inline ByteVector &getBytes()
+        {
+            return this->bytes;
+        }
     };
 
-    struct ServerNetManager
+    class NetworkManager
     {
-        OS::InetAddr *address = nullptr; // Server address
-        OS::Socket *socket = nullptr; // Server socket
-        std::vector<ClientNetInfo> clients; // Clients
-        Crypto::RSA rsa = Crypto::RSA();
+    private:
+        Socket socket; // Server socket
+        std::map<Socket, ClientNetInfo> clients; // Clients
+        Crypto::RSA rsa = Crypto::RSA(false);
 
-        ServerNetManager() = default;
+    public:
+        NetworkManager();
 
-        ~ServerNetManager();
+        void start();
+
+        void end();
+
+        inline ClientNetInfo &addClient(Socket s, std::string ip) noexcept
+        {
+            return this->clients.try_emplace(s, s, ip).first->second;
+        }
+
+        void closeSocket(Socket s, bool connected);
+
+        void disconnect(ClientNetInfo &connection, const std::string &reason = "");
+
+        static std::string sendHTTPGet(const std::string &server, const std::string &page);
+
+        ~NetworkManager();
+
+        [[nodiscard]] inline Socket getSocket() const noexcept
+        {
+            return this->socket;
+        }
 
         // S -> C:
+        void sendPacket(ClientNetInfo &connection, SendBuf &buf);
+
         // Login:
-        void sendRequestEncryptionPacket(ClientNetInfo &connection) const;
+        void sendRequestEncryptionPacket(ClientNetInfo &connection);
 
-        static void sendLoginSuccessPacket(ClientNetInfo &connection);
+        void sendLoginSuccessPacket(ClientNetInfo &connection);
 
-        static void sendGameJoinPacket(ClientNetInfo &connection);
-
-        static void sendSetCompressionPacket(ClientNetInfo &connection, I32 threshold);
+        void sendSetCompressionPacket(ClientNetInfo &connection, I32 threshold);
 
         // Status:
-        static void sendStatusResponsePacket(ClientNetInfo &connection);
+        void sendStatusResponsePacket(ClientNetInfo &connection);
 
-        static void sendPongPacket(ClientNetInfo &connection, I64 payload);
+        void sendPongPacket(ClientNetInfo &connection, I64 payload);
+
+        void sendLegacyPong(ClientNetInfo &connection);
 
         // Play:
-        static void sendDisconnectPacket(ClientNetInfo &connection, const std::string &reason);
+        void sendDisconnectPacket(ClientNetInfo &connection, const std::string &reason);
 
-        static void sendHeldItemChangePacket(ClientNetInfo &connection);
+        void sendHeldItemChangePacket(ClientNetInfo &connection);
 
         // C -> S:
-        void receivePacket(ClientNetInfo &connection, Buffer &buf) const;
+        void receivePacket(ClientNetInfo &connection, RecvBuf buf);
 
         // Login:
-        void handleEncryptionResponsePacket(ClientNetInfo &connection, Buffer &buf) const;
+        void handleEncryptionResponsePacket(ClientNetInfo &connection, RecvBuf &buf);
     };
 
-    inline ServerNetManager INSTANCE;
-
-    IfError init();
-
-    IfError listenToConnections();
-
-    IfError sendPacket(ClientNetInfo &connection, Buffer &buf);
-
-    void disconnect(ClientNetInfo &connection, const std::string &reason);
-
-    IfError sendHTTPGet(const std::string &server, const std::string &page, std::string &out);
-
-    IfError finalize();
+    inline NetworkManager NETSERVICE;
 }
 
 #endif /* COMiC_NETWORK_HPP */

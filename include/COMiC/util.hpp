@@ -2,10 +2,10 @@
 #define COMIC_UTIL_HPP
 
 #include <string>
-#include <COMiC/core.hpp>
-#include <COMiC/crypto.hpp>
 #include <fstream>
 #include <sstream>
+#include <COMiC/core.hpp>
+#include <COMiC/crypto.hpp>
 
 namespace COMiC::Util
 {
@@ -22,35 +22,13 @@ namespace COMiC::Util
         {
         };
 
-        constexpr inline explicit UUID(const Byte data[16]) noexcept
-        {
-            U64 msb_ = 0, lsb_ = 0;
-
-            for (I32 i = 0; i < 8; i++)
-                msb_ = (msb_ << 8) | (data[i] & 0xFF);
-
-            for (I32 i = 8; i < 16; i++)
-                lsb_ = (lsb_ << 8) | (data[i] & 0xFF);
-
-            this->msb = msb_;
-            this->lsb = lsb_;
-        }
+        explicit UUID(const Byte data[16]) noexcept;
 
         explicit UUID(const std::string &str) noexcept;
 
         static UUID random();
 
-        static UUID fromName(const char *name) noexcept;
-
-        [[nodiscard]] constexpr inline U32 version() const noexcept;
-
-        [[nodiscard]] constexpr inline U32 variant() const noexcept;
-
-        [[nodiscard]] constexpr inline U64 timestamp() const noexcept;
-
-        [[nodiscard]] constexpr inline U32 clockSequence() const noexcept;
-
-        [[nodiscard]] constexpr inline U64 node() const noexcept;
+        static UUID fromName(const std::string &name) noexcept;
 
         [[nodiscard]] std::string toString() const noexcept;
 
@@ -60,26 +38,7 @@ namespace COMiC::Util
         }
 
         constexpr inline UUID &operator=(UUID const &other) noexcept = default;
-
-        ~UUID() = default;
     };
-
-    static inline IfError readPNG(const std::string &filename, std::string &out)
-    {
-        std::ifstream fin(filename, std::ios::in | std::ios::binary);
-        if (!fin.good())
-        {
-            std::cerr << "readPNG() failed: unable to open " << filename << std::endl;
-            return FAIL;
-        }
-
-        std::ostringstream oss;
-        oss << fin.rdbuf();
-
-        out = oss.str();
-
-        return SUCCESS;
-    }
 }
 
 #endif // COMIC_UTIL_HPP

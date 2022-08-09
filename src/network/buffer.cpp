@@ -18,7 +18,12 @@ namespace COMiC::Network
         return 5;
     }
 
-    void Buffer::prependSize()
+    void RecvBuf::skip(USize count)
+    {
+        this->index += count;
+    }
+
+    void SendBuf::prependSize()
     {
         USize data_size = this->index - DATA_START, offset = varIntSize((I32) data_size);
 
@@ -28,62 +33,69 @@ namespace COMiC::Network
         this->size = data_size + offset;
     }
 
-    void Buffer::prepare(ClientNetInfo &connection)
+    void SendBuf::prepare(ClientNetInfo &connection)
     {
         if (connection.compressed)
         {
             auto data_size = this->length();
-            if (data_size >= Config::NETWORK_COMPRESSION_THRESHOLD)
+            if (data_size >= CONFIG.networkCompressionThreshold())
             {
                 // Compressed packet format (https://www.reddit.com/r/admincraft/comments/2agvxn/how_compression_works):
                 // 1. Total packet length (VarInt);
                 // 2. Uncompressed packet data length (VarInt) - zero if uncompressed;
                 // 3. Packet data.
 
-                std::string deflated;
-                Compression::DEFLATER.compress(this->data(), data_size, deflated);
-                this->index = Buffer::DATA_START;
+                auto deflated = Compression::DEFLATER.compress(this->data(), data_size);
+                this->index = SendBuf::DATA_START;
                 this->writeVarInt((I32) data_size);
-                memcpy(this->data() + this->index, deflated.data(), deflated.length());
+                memcpy(this->data() + this->index, deflated.data(), deflated.size());
 
-                this->skip(deflated.length());
+                this->skip(deflated.size());
             }
             else
             {
                 this->skip(1);
                 memmove(this->data() + 1, this->data(), data_size);
-                this->bytes[Buffer::DATA_START] = 0;
+                this->bytes[SendBuf::DATA_START] = 0;
             }
         }
 
         this->prependSize();
 
         if (connection.encrypted)
-            connection.cipher.encrypt(this->bytes + this->index, this->size, this->bytes + this->index);
+            connection.cipher.encrypt(this->position(), this->size, this->position());
     }
 
-    void Buffer::skip(USize count)
+    void SendBuf::skip(USize count)
     {
         this->index += count;
     }
 
-    Byte Buffer::read()
+    Byte RecvBuf::read()
     {
+        if (this->index >= this->bytes.size())
+            throw std::out_of_range("COMiC: No more bytes to read in RecvBuf");
+
         return this->bytes[this->index++];
     }
 
-    void Buffer::write(Byte byte)
+    void SendBuf::write(Byte byte)
     {
-        if (this->index + 1 > this->size)
-        {
-            this->bytes = (Byte *) realloc(this->bytes, this->size * 2);
-            this->size *= 2;
-        }
+        if (this->index < DATA_START)
+            this->bytes[this->index] = byte;
+        else
+            this->bytes.push_back(byte);
 
-        this->bytes[this->index++] = byte;
+        this->index++;
     }
 
-    I32 Buffer::readVarInt()
+    void SendBuf::write(std::initializer_list<Byte> data)
+    {
+        for (auto byte: data)
+            write(byte);
+    }
+
+    I32 RecvBuf::readVarInt()
     {
         I32 res = 0;
         Byte byte;
@@ -99,7 +111,7 @@ namespace COMiC::Network
         return res;
     }
 
-    void Buffer::writeVarInt(I32 value)
+    void SendBuf::writeVarInt(I32 value)
     {
         for (I32 i = 0; i < 6; i++)
         {
@@ -114,7 +126,7 @@ namespace COMiC::Network
         }
     }
 
-    I64 Buffer::readVarLong()
+    I64 RecvBuf::readVarLong()
     {
         I64 value = 0;
         Byte byte;
@@ -130,7 +142,7 @@ namespace COMiC::Network
         return value;
     }
 
-    void Buffer::writeVarLong(I64 value)
+    void SendBuf::writeVarLong(I64 value)
     {
         for (I32 i = 0; i < 11; i++)
         {
@@ -145,50 +157,50 @@ namespace COMiC::Network
         }
     }
 
-    bool Buffer::readBool()
+    bool RecvBuf::readBool()
     {
         return (read() != 0);
     }
 
-    void Buffer::writeBool(bool value)
+    void SendBuf::writeBool(bool value)
     {
         write((Byte) value);
     }
 
-    I16 Buffer::readShort()
+    I16 RecvBuf::readShort()
     {
         return (I16) (((read() & 0xFF) << 8) | (read() & 0xFF));
     }
 
-    void Buffer::writeShort(I16 value)
+    void SendBuf::writeShort(I16 value)
     {
         write((Byte) ((U16) value >> 8));
         write((Byte) value);
     }
 
-    I32 Buffer::readInt()
+    I32 RecvBuf::readInt()
     {
         return ((readShort() & 0xFFFF) << 16) | (readShort() & 0xFFFF);
     }
 
-    void Buffer::writeInt(I32 value)
+    void SendBuf::writeInt(I32 value)
     {
         writeShort((I16) ((U32) value >> 16));
         writeShort((I16) value);
     }
 
-    I64 Buffer::readLong()
+    I64 RecvBuf::readLong()
     {
         return (I64) (((readInt() & 0xFFFFFFFFULL) << 32) | (readInt() & 0xFFFFFFFFULL));
     }
 
-    void Buffer::writeLong(I64 value)
+    void SendBuf::writeLong(I64 value)
     {
         writeInt((I32) ((U64) value >> 32));
         writeInt((I32) value);
     }
 
-    float Buffer::readFloat()
+    float RecvBuf::readFloat()
     {
         I32 v = readInt();
 
@@ -201,7 +213,7 @@ namespace COMiC::Network
         return u.f;
     }
 
-    void Buffer::writeFloat(float value)
+    void SendBuf::writeFloat(float value)
     {
         union
         {
@@ -212,7 +224,7 @@ namespace COMiC::Network
         writeInt(u.i);
     }
 
-    double Buffer::readDouble()
+    double RecvBuf::readDouble()
     {
         I64 v = readLong();
 
@@ -225,7 +237,7 @@ namespace COMiC::Network
         return u.d;
     }
 
-    void Buffer::writeDouble(double value)
+    void SendBuf::writeDouble(double value)
     {
         union
         {
@@ -236,20 +248,20 @@ namespace COMiC::Network
         writeLong(u.l);
     }
 
-    std::string Buffer::readString(USize maxlen)
+    std::string RecvBuf::readString(USize maxlen)
     {
         I32 strLen = readVarInt();
 
         if (strLen > maxlen * 4)
             return "";
 
-        auto str = std::string((char *) this->bytes + this->index, strLen);
+        auto str = std::string((char *) this->position(), strLen);
         skip(strLen);
 
         return str;
     }
 
-    void Buffer::writeString(const std::string &str, USize maxlen)
+    void SendBuf::writeString(const std::string &str, USize maxlen)
     {
         I32 strLen = (I32) str.length();
 
@@ -261,36 +273,39 @@ namespace COMiC::Network
             write((Byte) str[j]);
     }
 
-    I32 Buffer::readEnum()
+    I32 RecvBuf::readEnum()
     {
         return readVarInt();
     }
 
-    void Buffer::writeEnum(I32 value)
+    void SendBuf::writeEnum(I32 value)
     {
         writeVarInt(value);
     }
 
-    void Buffer::readByteArray(Byte *out, I32 count)
+    ByteVector RecvBuf::readByteArray()
     {
-        memcpy(out, this->bytes + this->index, count);
-        skip(count);
+        auto size = this->readVarInt();
+        ByteVector out(this->position(), this->position() + size);
+        skip(size);
+
+        return out;
     }
 
-    void Buffer::writeByteArray(const Byte *arr, I32 count)
+    void SendBuf::writeByteArray(const ByteVector &arr)
     {
-        writeVarInt(count);
+        writeVarInt((I32) arr.size());
 
-        for (I32 i = 0; i < count; i++)
-            write(arr[i]);
+        for (Byte b: arr)
+            write(b);
     }
 
-    PacketID Buffer::readPacketID(NetworkState state)
+    PacketID RecvBuf::readPacketID(NetworkState state)
     {
         return static_cast<PacketID>(((state + 1) << 8) | readVarInt());
     }
 
-    void Buffer::writePacketID(PacketID id)
+    void SendBuf::writePacketID(PacketID id)
     {
         writeVarInt((I32) id & 0xFF);
     }

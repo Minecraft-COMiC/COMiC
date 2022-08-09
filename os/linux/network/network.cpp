@@ -36,11 +36,6 @@ namespace COMiC::Network
         return this->socket->socket;
     }
 
-    bool ClientNetInfo::operator==(const ClientNetInfo &other) const
-    {
-        return this->socket->socket == other.socket->socket;
-    }
-
     ClientNetInfo::~ClientNetInfo()
     {
         delete this->socket;
@@ -233,38 +228,7 @@ namespace COMiC::Network
 
                     if (errno == EAGAIN || errno == EWOULDBLOCK) // Received all data
                     {
-                        if (connection->encrypted && connection->cipher.decrypt(msg.data(), msg.size(), msg.data()))
-                        {
-                            std::cerr << "Unable to decrypt packet from client" << std::endl;
-                            disconnect(*connection, "Badly encrypted packet");
-                            continue;
-                        }
-
                         Buffer buf(msg.data(), 0, msg.size());
-                        buf.size = buf.readVarInt();
-
-                        if (connection->compressed)
-                        {
-                            I32 data_length = buf.readVarInt();
-
-                            if (data_length > 0)
-                            {
-                                std::string inflated;
-                                if (Compression::INFLATER.decompress(
-                                        buf.bytes + buf.index,
-                                        buf.size - buf.index,
-                                        inflated
-                                ))
-                                {
-                                    std::cerr << "Could not decompress packet from client" << std::endl;
-                                    disconnect(*connection, "Bad compressed packet format");
-                                    continue;
-                                }
-                                memcpy(buf.bytes, inflated.data(), inflated.length());
-                                buf.index = 0;
-                            }
-                        }
-
                         INSTANCE.receivePacket(*connection, buf);
                     }
                     else // Handle error
